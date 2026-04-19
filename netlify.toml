@@ -1,5 +1,5 @@
 [build]
-  command = "cd frontend && npm install --include=dev && npm run build && cd .. && rm -rf backend/src/seed"
+  command = "cd frontend && npm install --include=dev && npm run build && cd ../backend && npm install && cd .. && rm -rf backend/src/seed backend/src/server.js"
     publish = "frontend/dist"
 
     [functions]

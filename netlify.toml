@@ -1,23 +1,22 @@
 [build]
-  command = "npm install --prefix frontend --include=dev && npm run build --prefix frontend && npm install --prefix backend --legacy-peer-deps && rm -rf backend/src/seed backend/src/server.js"
-    publish = "frontend/dist"
+  command = "npm install --prefix backend --legacy-peer-deps && npm install --prefix frontend --include=dev --legacy-peer-deps && npm run build --prefix frontend && rm -rf backend/src/seed backend/src/server.js"
+  publish = "frontend/dist"
 
-    [functions]
-      directory = "backend/src"
-        node_bundler = "esbuild"
-          external_node_modules = ["firebase-admin"]
+[functions]
+  directory = "backend/src"
+  node_bundler = "esbuild"
+  external_node_modules = ["firebase-admin"]
 
-          [[redirects]]
-            from = "/api/*"
-              to = "/.netlify/functions/lambda/api/:splat"
-                status = 200
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/lambda/api/:splat"
+  status = 200
 
-                [[redirects]]
-                  from = "/*"
-                    to = "/index.html"
-                      status = 200
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
-                      [context.production.environment]
-                        NODE_VERSION = "20"
-                          NODE_ENV = "production"
-                          
+[context.production.environment]
+  NODE_VERSION = "20"
+  NODE_ENV = "production"

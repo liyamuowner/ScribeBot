@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const messages = [
@@ -21,11 +21,20 @@ const LoadingScreen = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
   const [messageIndex, setMessageIndex] = useState(0);
 
+  const completeRef = useRef(false);
+
   useEffect(() => {
     // Session-based check
     const hasVisited = sessionStorage.getItem('liyamu_session_boot');
+    const finishLoading = () => {
+      if (!completeRef.current) {
+        completeRef.current = true;
+        onComplete();
+      }
+    };
+
     if (hasVisited) {
-      onComplete();
+      finishLoading();
       return;
     }
     sessionStorage.setItem('liyamu_session_boot', 'true');
@@ -39,14 +48,25 @@ const LoadingScreen = ({ onComplete }) => {
         const next = prev + increment;
         if (next >= 100) {
           clearInterval(timer);
-          setTimeout(onComplete, 500);
+          setTimeout(() => {
+            setProgress(100);
+            finishLoading();
+          }, 500);
           return 100;
         }
         return next;
       });
     }, intervalTime);
 
-    return () => clearInterval(timer);
+    const fallbackTimer = setTimeout(() => {
+      setProgress(100);
+      finishLoading();
+    }, 6000);
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(fallbackTimer);
+    };
   }, [onComplete]);
 
   useEffect(() => {

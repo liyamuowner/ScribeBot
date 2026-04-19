@@ -5,6 +5,8 @@
 [functions]
   directory = "backend/src"
   node_bundler = "esbuild"
+  node_sourcemap = true
+  output_format = "esm"
   external_node_modules = ["firebase-admin"]
 
 [[redirects]]

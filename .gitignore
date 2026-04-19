@@ -39,3 +39,6 @@ backend/uploads/*
 # Misc
 .cache/
 *.pem
+
+# Local Netlify folder
+.netlify

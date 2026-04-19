@@ -15,19 +15,29 @@ cloudinary.config({
 
 // Helper to determine storage
 const getStorage = (folder) => {
-  if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
+  const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && 
+                               process.env.CLOUDINARY_API_KEY && 
+                               process.env.CLOUDINARY_API_SECRET;
+
+  if (isCloudinaryConfigured) {
     return new CloudinaryStorage({
       cloudinary: cloudinary,
       params: {
         folder: `liyamu/${folder}`,
-        resource_type: 'auto', // Important for PDFs
+        resource_type: 'auto',
         allowed_formats: ['jpg', 'png', 'jpeg', 'pdf', 'webp'],
         public_id: (req, file) => `${Date.now()}-${file.originalname.split('.')[0]}`,
       },
     });
   }
 
-  // Fallback to local storage for development
+  // Use memory storage in production/Netlify to avoid EROFS: read-only file system
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[Storage] Cloudinary not fully configured. Using memory storage fallback.');
+    return multer.memoryStorage();
+  }
+
+  // Local storage for development only
   return multer.diskStorage({
     destination: 'uploads/',
     filename: (req, file, cb) => {

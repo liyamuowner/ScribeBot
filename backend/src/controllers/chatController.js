@@ -1,6 +1,5 @@
-import ChatMessage from '../models/ChatMessage.js';
-import User from '../models/User.js';
-import Notification from '../models/Notification.js';
+import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
+import { triggerNotification, notifyAdmins } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
 
 export const sendMessage = async (req, res) => {
@@ -10,65 +9,67 @@ export const sendMessage = async (req, res) => {
   let chat;
   if (req.user.role === 'admin') {
     if (!recipientId) throw new ApiError(400, 'Recipient ID is required for admins');
-    chat = await ChatMessage.create({
-      user: recipientId,
-      admin: req.user._id,
-      sender: 'admin',
-      message
+    chat = await createDoc('chatMessages', {
+      userId: recipientId,
+      adminId: req.user.id, adminName: req.user.name,
+      sender: 'admin', message, isRead: false,
     });
 
-    await Notification.create({
-      user: recipientId,
+    await triggerNotification({
+      userId: recipientId,
       title: 'New message from Admin',
       message: 'An administrator has responded to your inquiry.',
-      type: 'user'
+      type: 'user',
     });
   } else {
-    chat = await ChatMessage.create({
-      user: req.user._id,
-      sender: 'user',
-      message
+    chat = await createDoc('chatMessages', {
+      userId: req.user.id, userName: req.user.name,
+      sender: 'user', message, isRead: false,
     });
 
-    // Optionally notify all admins
-    const admins = await User.find({ role: 'admin' });
-    await Promise.all(admins.map(admin => 
-      Notification.create({
-        user: admin._id,
-        title: 'New Support Message',
-        message: `User ${req.user.name} sent a new message.`,
-        type: 'user'
-      })
-    ));
+    await notifyAdmins({
+      title: 'New Support Message',
+      message: `User ${req.user.name} sent a new message.`,
+      type: 'user',
+    });
   }
 
   res.status(201).json(chat);
 };
 
 export const getMyChatHistory = async (req, res) => {
-  const messages = await ChatMessage.find({ user: req.user._id }).sort({ createdAt: 1 });
-  res.json(messages);
+  const snap = await col.chatMessages().where('userId', '==', req.user.id).orderBy('createdAt', 'asc').get();
+  res.json(snapToArray(snap));
 };
 
 export const getAdminChats = async (req, res) => {
   const { userId } = req.params;
+
   if (!userId) {
-    // Get all unique users who have sent messages
-    const distinctUsers = await ChatMessage.distinct('user');
-    const userDetails = await User.find({ _id: { $in: distinctUsers } }).select('name email role');
-    return res.json(userDetails);
+    // Get all distinct user IDs who sent messages
+    const snap = await col.chatMessages().where('sender', '==', 'user').get();
+    const userIds = [...new Set(snapToArray(snap).map(m => m.userId))];
+    const users = await Promise.all(userIds.map(id => getDocById('users', id)));
+    return res.json(users.filter(Boolean).map(({ id, name, email, role }) => ({ id, name, email, role })));
   }
 
-  const messages = await ChatMessage.find({ user: userId }).sort({ createdAt: 1 });
-  res.json(messages);
+  const snap = await col.chatMessages().where('userId', '==', userId).orderBy('createdAt', 'asc').get();
+  res.json(snapToArray(snap));
 };
 
 export const markAsRead = async (req, res) => {
-  const { userId } = req.params; // If admin, mark all messages from this user as read
-  const query = req.user.role === 'admin' 
-    ? { user: userId, sender: 'user', isRead: false }
-    : { user: req.user._id, sender: 'admin', isRead: false };
+  const { userId } = req.params;
+  const senderFilter = req.user.role === 'admin' ? 'user' : 'admin';
+  const userIdFilter = req.user.role === 'admin' ? userId : req.user.id;
 
-  await ChatMessage.updateMany(query, { isRead: true });
+  const snap = await col.chatMessages()
+    .where('userId', '==', userIdFilter)
+    .where('sender', '==', senderFilter)
+    .where('isRead', '==', false).get();
+
+  const batch = col.chatMessages().firestore.batch();
+  snap.docs.forEach(d => batch.update(d.ref, { isRead: true, updatedAt: FieldValue.serverTimestamp() }));
+  await batch.commit();
+
   res.json({ success: true });
 };

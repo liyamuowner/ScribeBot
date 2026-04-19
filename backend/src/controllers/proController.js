@@ -1,60 +1,50 @@
-import User from '../models/User.js';
-import Notification from '../models/Notification.js';
+import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
+import { triggerNotification } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
 
 export const upgradeToPro = async (req, res) => {
-  const { type } = req.body; // '1m', '3m', '1y'
-  if (!['1m', '3m', '1y'].includes(type) ) {
-    throw new ApiError(400, 'Invalid subscription type');
-  }
+  const { type } = req.body;
+  if (!['1m', '3m', '1y'].includes(type)) throw new ApiError(400, 'Invalid subscription type');
 
-  const user = await User.findById(req.user._id);
+  const user = await getDocById('users', req.user.id);
   if (!user) throw new ApiError(404, 'User not found');
 
-  const costs = {
-    '1m': 1000,
-    '3m': 2500,
-    '1y': 8000
-  };
+  const costs = { '1m': 1000, '3m': 2500, '1y': 8000 };
+  if ((user.creditBalance || 0) < costs[type]) throw new ApiError(400, 'Insufficient credits to upgrade.');
 
-  if (user.creditBalance < costs[type]) {
-    throw new ApiError(400, 'Insufficient credits to upgrade.');
-  }
-
-  user.creditBalance -= costs[type];
-
-  // Define durations
   const durations = {
     '1m': 30 * 24 * 60 * 60 * 1000,
     '3m': 90 * 24 * 60 * 60 * 1000,
-    '1y': 365 * 24 * 60 * 60 * 1000
+    '1y': 365 * 24 * 60 * 60 * 1000,
   };
 
-  const now = new Date();
-  const currentExpiry = user.proExpiryDate && user.proExpiryDate > now ? user.proExpiryDate.getTime() : now.getTime();
-  
-  user.isPro = true;
-  user.proType = type;
-  user.proExpiryDate = new Date(currentExpiry + durations[type]);
-  
-  if (!user.badges) {
-    user.badges = {};
-  }
-  user.badges.pro = true;
-  
-  await user.save();
+  const now = Date.now();
+  const currentExpiry = user.proExpiryDate?.toMillis
+    ? (user.proExpiryDate.toMillis() > now ? user.proExpiryDate.toMillis() : now)
+    : now;
 
-  await Notification.create({
-    user: user._id,
-    title: 'Welcome to Pro!',
-    message: `Payment successful! You now have access to Pro benefits until ${user.proExpiryDate.toLocaleDateString()}. You can now list books with a price.`,
-    type: 'purchase'
+  const proExpiryDate = new Date(currentExpiry + durations[type]);
+
+  await updateDoc('users', user.id, {
+    creditBalance: FieldValue.increment(-costs[type]),
+    isPro: true,
+    proType: type,
+    proExpiryDate,
+    'badges.pro': true,
   });
 
-  res.json({ success: true, user });
+  await triggerNotification({
+    userId: user.id,
+    title: 'Welcome to Pro!',
+    message: `Payment successful! You now have access to Pro benefits until ${proExpiryDate.toLocaleDateString()}.`,
+    type: 'purchase',
+  });
+
+  const updated = await getDocById('users', user.id);
+  res.json({ success: true, user: updated });
 };
 
 export const getProStatus = async (req, res) => {
-  const user = await User.findById(req.user._id).select('isPro proExpiryDate proType');
-  res.json(user);
+  const user = await getDocById('users', req.user.id);
+  res.json({ isPro: user.isPro, proExpiryDate: user.proExpiryDate, proType: user.proType });
 };

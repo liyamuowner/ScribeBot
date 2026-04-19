@@ -1,251 +1,235 @@
-import User from '../models/User.js';
-import Book from '../models/Book.js';
-import Purchase from '../models/Purchase.js';
-import Notification from '../models/Notification.js';
-import Review from '../models/Review.js';
-import CreativeWork from '../models/CreativeWork.js';
+import { col, getDocById, createDoc, updateDoc, deleteDoc, snapToArray, getBatch, FieldValue } from '../config/firestore.js';
+import { triggerNotification } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
 
 export const getAdminOverview = async (req, res) => {
-  const [users, authors, pendingBooks, purchases] = await Promise.all([
-    User.countDocuments({ role: { $in: ['beginner_reader', 'pro_reader'] } }),
-    User.countDocuments({ role: { $in: ['author', 'verified_author', 'pro_writer'] } }),
-    Book.countDocuments({ status: 'pending' }),
-    Purchase.find().populate('book', 'title price').sort({ createdAt: -1 }),
+  const [usersSnap, authorsSnap, pendingBooksSnap, purchasesSnap] = await Promise.all([
+    col.users().where('role', 'in', ['beginner_reader', 'pro_reader']).get(),
+    col.users().where('role', 'in', ['author', 'verified_author', 'pro_writer']).get(),
+    col.books().where('status', '==', 'pending').get(),
+    col.purchases().orderBy('createdAt', 'desc').limit(50).get(),
   ]);
-  res.json({ users, authors, pendingBooks, purchases });
+
+  res.json({
+    users: usersSnap.size,
+    authors: authorsSnap.size,
+    pendingBooks: pendingBooksSnap.size,
+    purchases: snapToArray(purchasesSnap),
+  });
 };
 
 export const getAllUsers = async (req, res) => {
-  const users = await User.find({ isDeleted: { $ne: true } }).select('-password').sort({ createdAt: -1 });
+  const snap = await col.users().where('isDeleted', '!=', true).get();
+  const users = snapToArray(snap).sort((a, b) => {
+    const ta = a.createdAt?.toMillis?.() || new Date(a.createdAt || 0).getTime();
+    const tb = b.createdAt?.toMillis?.() || new Date(b.createdAt || 0).getTime();
+    return tb - ta;
+  });
   res.json(users);
 };
 
 export const updateUser = async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = await getDocById('users', req.params.id);
   if (!user) throw new ApiError(404, 'User not found');
 
   const { isBanned, role, badges } = req.body;
   const oldRole = user.role;
 
-  // PROTECTION: Prevent modifying the owner account
   const isOwner = user.email === 'liyamu.owner@gmail.com' || user.badges?.owner;
   if (isOwner) {
-    if (typeof isBanned === 'boolean' && isBanned !== user.isBanned) {
-      throw new ApiError(403, 'The Owner account cannot be suspended or banned.');
-    }
-    if (role && role !== user.role) {
-      throw new ApiError(403, 'The Owner account role cannot be changed.');
-    }
+    if (typeof isBanned === 'boolean' && isBanned !== user.isBanned) throw new ApiError(403, 'The Owner account cannot be suspended or banned.');
+    if (role && role !== user.role) throw new ApiError(403, 'The Owner account role cannot be changed.');
   }
 
-  if (typeof isBanned === 'boolean') user.isBanned = isBanned;
-  
+  const updates = {};
+  if (typeof isBanned === 'boolean') updates.isBanned = isBanned;
+
   const validRoles = ['reader', 'beginner_reader', 'pro_reader', 'author', 'verified_author', 'pro_writer', 'admin'];
   if (role && validRoles.includes(role)) {
-    // Prevent self-demotion from admin
-    if (req.user._id.toString() === user._id.toString() && role !== 'admin') {
-      throw new ApiError(400, 'You cannot remove your own admin role');
-    }
-    user.role = role;
+    if (req.user.id === user.id && role !== 'admin') throw new ApiError(400, 'You cannot remove your own admin role');
+    updates.role = role;
+
+    // Sync role to Firestore (already in Firestore)
   }
+  if (badges) updates.badges = { ...user.badges, ...badges };
 
-  if (badges) user.badges = { ...user.badges, ...badges };
-  await user.save();
+  await updateDoc('users', user.id, updates);
 
-  // Notify user if role has changed
   if (role && role !== oldRole) {
-    await Notification.create({
-      user: user._id,
+    await triggerNotification({
+      userId: user.id,
       title: 'Member Rank Updated',
-      message: `Your account role has been updated to ${role.replace('_', ' ')}. Your access permissions have changed accordingly.`,
-      type: 'user'
+      message: `Your account role has been updated to ${role.replace('_', ' ')}.`,
+      type: 'user',
     });
   }
 
-  res.json(user);
+  const updated = await getDocById('users', user.id);
+  res.json(updated);
 };
 
 export const getBookSubmissions = async (req, res) => {
-  const books = await Book.find().populate('author', 'name email').sort({ createdAt: -1 });
-  res.json(books);
+  const snap = await col.books().orderBy('createdAt', 'desc').get();
+  res.json(snapToArray(snap));
 };
 
 export const reviewBookSubmission = async (req, res) => {
   const { status, rejectionReason } = req.body;
-  const book = await Book.findById(req.params.id);
+  const book = await getDocById('books', req.params.id);
   if (!book) throw new ApiError(404, 'Book not found');
-  book.status = status;
-  if (rejectionReason) book.rejectionReason = rejectionReason;
-  await book.save();
 
-  await Notification.create({
-    user: book.author,
+  await updateDoc('books', book.id, { status, ...(rejectionReason ? { rejectionReason } : {}) });
+
+  await triggerNotification({
+    userId: book.authorId,
     title: `Book ${status}`,
-    message: status === 'approved' ? `${book.title} is now public.` : `${book.title} was rejected: ${rejectionReason}`,
+    message: status === 'approved'
+      ? `${book.title} is now public.`
+      : `${book.title} was rejected: ${rejectionReason}`,
     type: 'book',
   });
 
-  res.json(book);
+  res.json({ ...book, status });
 };
 
 export const deleteBook = async (req, res) => {
-  const book = await Book.findById(req.params.id);
+  const book = await getDocById('books', req.params.id);
   if (!book) throw new ApiError(404, 'Book not found');
 
-  // Cascade delete associated reviews and purchases
-  await Promise.all([
-    Review.deleteMany({ book: book._id }),
-    Purchase.deleteMany({ book: book._id })
+  const [reviewsSnap, purchasesSnap] = await Promise.all([
+    col.reviews().where('bookId', '==', book.id).get(),
+    col.purchases().where('bookId', '==', book.id).get(),
   ]);
 
-  if (book.author) {
-    await Notification.create({
-      user: book.author,
+  const batch = getBatch();
+  reviewsSnap.docs.forEach(d => batch.delete(d.ref));
+  purchasesSnap.docs.forEach(d => batch.delete(d.ref));
+  batch.delete(col.books().doc(book.id));
+  await batch.commit();
+
+  if (book.authorId) {
+    await triggerNotification({
+      userId: book.authorId,
       title: 'Book Removed',
-      message: `Your book "${book.title}" was permanently removed from the platform by administration.`,
+      message: `Your book "${book.title}" was permanently removed by administration.`,
       type: 'book',
     });
   }
 
-  await book.deleteOne();
   res.json({ success: true, message: 'Book and associated data permanently removed.' });
 };
 
 export const toggleBookVisibility = async (req, res) => {
-  const book = await Book.findById(req.params.id);
+  const book = await getDocById('books', req.params.id);
   if (!book) throw new ApiError(404, 'Book not found');
-
-  book.isHidden = !book.isHidden;
-  await book.save();
-
-  res.json(book);
+  await updateDoc('books', book.id, { isHidden: !book.isHidden });
+  res.json({ ...book, isHidden: !book.isHidden });
 };
 
-// Enhanced Reviews: Latest 20 or Filter by Book
 export const getAllUserReviews = async (req, res) => {
   const { bookId } = req.query;
-  const query = {};
-  if (bookId) query.book = bookId;
-
-  const reviews = await Review.find(query)
-    .populate('book', 'title coverUrl')
-    .populate('user', 'name email avatar')
-    .sort({ createdAt: -1 })
-    .limit(bookId ? 1000 : 20); // Show all for specific book, 20 for latest
-  res.json(reviews);
+  let query = col.reviews().orderBy('createdAt', 'desc');
+  if (bookId) query = col.reviews().where('bookId', '==', bookId).orderBy('createdAt', 'desc');
+  else query = col.reviews().orderBy('createdAt', 'desc').limit(20);
+  res.json(snapToArray(await query.get()));
 };
 
 export const deleteUserReview = async (req, res) => {
-  const review = await Review.findById(req.params.id);
+  const review = await getDocById('reviews', req.params.id);
   if (!review) throw new ApiError(404, 'Review not found');
-  
-  const book = await Book.findById(review.book);
+
+  await deleteDoc('reviews', review.id);
+
+  // Recalculate book rating
+  const book = await getDocById('books', review.bookId);
   if (book) {
-    const reviews = await Review.find({ book: book._id, _id: { $ne: review._id } });
-    if (reviews.length > 0) {
-      book.ratingAverage = reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length;
-      book.ratingCount = reviews.length;
-    } else {
-      book.ratingAverage = 0;
-      book.ratingCount = 0;
-    }
-    await book.save();
+    const remaining = snapToArray(await col.reviews().where('bookId', '==', review.bookId).get());
+    const avg = remaining.length ? remaining.reduce((s, r) => s + r.rating, 0) / remaining.length : 0;
+    await updateDoc('books', book.id, { ratingAverage: avg, ratingCount: remaining.length });
   }
 
-  await review.deleteOne();
   res.json({ success: true });
 };
 
-// Creative Corner Review logic
 export const getAdminCreativeWorks = async (req, res) => {
-  const works = await CreativeWork.find()
-    .populate('author', 'name profilePicture email')
-    .sort({ createdAt: -1 });
-  res.json(works);
+  const snap = await col.creativeWorks().orderBy('createdAt', 'desc').get();
+  res.json(snapToArray(snap));
 };
 
 export const reviewCreativeWork = async (req, res) => {
   const { status, rejectionReason } = req.body;
-  const work = await CreativeWork.findById(req.params.id);
+  const work = await getDocById('creativeWorks', req.params.id);
   if (!work) throw new ApiError(404, 'Creative work not found');
 
-  work.status = status;
-  if (rejectionReason) work.rejectionReason = rejectionReason;
-  await work.save();
+  await updateDoc('creativeWorks', work.id, { status, ...(rejectionReason ? { rejectionReason } : {}) });
 
-  await Notification.create({
-    user: work.author,
+  await triggerNotification({
+    userId: work.authorId,
     title: `Creative Work ${status === 'approved' ? 'Approved' : 'Rejected'}`,
-    message: status === 'approved' 
-      ? `Your work "${work.title}" has been published and is now visible to the community.`
+    message: status === 'approved'
+      ? `Your work "${work.title}" has been published.`
       : `Your work "${work.title}" was rejected. Reason: ${rejectionReason || 'Policy violation.'}`,
     type: 'creative',
   });
 
-  res.json(work);
+  res.json({ ...work, status });
 };
 
 export const deleteCreativeWork = async (req, res) => {
-  const work = await CreativeWork.findById(req.params.id);
+  const work = await getDocById('creativeWorks', req.params.id);
   if (!work) throw new ApiError(404, 'Creative work not found');
 
-  await Notification.create({
-    user: work.author,
+  await triggerNotification({
+    userId: work.authorId,
     title: 'Content Moderated',
-    message: `Your creative work "${work.title}" has been removed by an administrator for violating community guidelines.`,
+    message: `Your creative work "${work.title}" was removed by an administrator.`,
     type: 'creative',
   });
 
-  await work.deleteOne();
+  await deleteDoc('creativeWorks', work.id);
   res.json({ success: true });
 };
 
-// Secure User Deletion
 export const deleteUser = async (req, res) => {
-  const { adminPassword } = req.body;
-  const admin = await User.findById(req.user._id);
-  
-  const isMatch = await admin.matchPassword(adminPassword);
-  if (!isMatch) throw new ApiError(401, 'Invalid admin password. Deletion unauthorized.');
-
-  const user = await User.findById(req.params.id);
+  const user = await getDocById('users', req.params.id);
   if (!user) throw new ApiError(404, 'User not found');
-  
-  // PROTECTION: Prevent deleting the owner account
+
   const isOwner = user.email === 'liyamu.owner@gmail.com' || user.badges?.owner;
   if (isOwner) throw new ApiError(403, 'The Owner account cannot be deleted.');
-
   if (user.role === 'admin') throw new ApiError(403, 'Administrators cannot be deleted via this dashboard.');
 
-  // Notify user (simulated as we delete their account next)
-  // In a real app, an email would be sent here.
-
-  // 1. Cascade Delete
-  await Promise.all([
-    Book.deleteMany({ author: user._id }),
-    CreativeWork.deleteMany({ author: user._id }),
-    Review.deleteMany({ user: user._id }),
-    Notification.deleteMany({ user: user._id }),
-    Purchase.deleteMany({ user: user._id })
+  // Cascade delete in batch
+  const [booksSnap, creativeSnap, reviewsSnap, notifsSnap, purchasesSnap] = await Promise.all([
+    col.books().where('authorId', '==', user.id).get(),
+    col.creativeWorks().where('authorId', '==', user.id).get(),
+    col.reviews().where('userId', '==', user.id).get(),
+    col.notifications().where('userId', '==', user.id).get(),
+    col.purchases().where('buyerId', '==', user.id).get(),
   ]);
 
-  // 2. Soft-delete user for Audit or Hard-delete? User requested "remove all associated data" 
-  // but also "add a section to view deleted user accounts". This implies Soft Delete.
-  user.isDeleted = true;
-  user.deletedAt = new Date();
-  // Clear sensitive data
-  user.name = `[DELETED USER ${user._id.toString().slice(-4)}]`;
-  user.email = `deleted_${Date.now()}@liyamu.com`;
-  user.phone = 'N/A';
-  user.password = 'N/A';
-  user.profilePicture = null;
-  await user.save({ validateBeforeSave: false });
+  const batch = getBatch();
+  [booksSnap, creativeSnap, reviewsSnap, notifsSnap, purchasesSnap].forEach(s =>
+    s.docs.forEach(d => batch.delete(d.ref))
+  );
+
+  // Soft-delete user
+  batch.update(col.users().doc(user.id), {
+    isDeleted: true,
+    deletedAt: FieldValue.serverTimestamp(),
+    name: `[DELETED USER ${user.id.slice(-4)}]`,
+    email: `deleted_${Date.now()}@liyamu.com`,
+    phone: 'N/A',
+    profilePicture: null,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  await batch.commit();
 
   res.json({ success: true, message: 'User and all associated data permanently removed.' });
 };
 
 export const getDeletedUsers = async (req, res) => {
-  const users = await User.find({ isDeleted: true }).sort({ deletedAt: -1 });
-  res.json(users);
+  const snap = await col.users().where('isDeleted', '==', true).orderBy('deletedAt', 'desc').get();
+  res.json(snapToArray(snap));
 };
+

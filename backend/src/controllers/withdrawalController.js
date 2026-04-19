@@ -1,126 +1,100 @@
-import Withdrawal from '../models/Withdrawal.js';
-import User from '../models/User.js';
-import Notification from '../models/Notification.js';
-import { notifyAdmins } from '../utils/notificationHelper.js';
+import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
+import { notifyAdmins, triggerNotification } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
 
-// Create a payout request (Author)
 export const createPayoutRequest = async (req, res) => {
   const { amount, bankDetails } = req.body;
-  const user = await User.findById(req.user._id);
+  const user = req.user;
 
-  // 1. Logic: Only "Pro" Authors
-  // isPro is Boolean; role also implies certain types.
   const isEligible = user.isPro || ['pro_writer', 'verified_author'].includes(user.role);
   if (!isEligible) throw new ApiError(403, 'Payouts are only available for Pro authors.');
-  // 1.5 Minimum Payout Check
   if (amount < 200) throw new ApiError(400, 'Minimum payout amount is 200 credits.');
 
-  // 2. Sufficient Balance (Unified)
   const totalBalance = (user.creditBalance || 0) + (user.earningsBalance || 0);
-  if (totalBalance < amount) {
-    throw new ApiError(400, `Insufficient balance. Your total platform balance is ${totalBalance.toFixed(2)} credits.`);
-  }
+  if (totalBalance < amount) throw new ApiError(400, `Insufficient balance. Your total is ${totalBalance} credits.`);
 
-  // 3. Calculate Fee (2%)
-  const feeAmount = Math.floor(amount * 0.02 * 100) / 100; // 2% fee
+  const feeAmount = Math.floor(amount * 0.02 * 100) / 100;
   const netAmount = amount - feeAmount;
 
-  // 4. Create Request and deduct balance
-  const withdrawal = await Withdrawal.create({
-    user: user._id,
-    amount,
-    feeAmount,
-    netAmount,
-    bankDetails,
+  const withdrawal = await createDoc('withdrawals', {
+    userId: user.id, userName: user.name,
+    amount, feeAmount, netAmount,
+    bankDetails: bankDetails || '',
+    status: 'pending', payoutSlip: '', rejectionReason: '',
   });
 
-  // Split Deduction logic
-  let remainingToDeduct = amount;
-  if (user.earningsBalance >= remainingToDeduct) {
-    user.earningsBalance -= remainingToDeduct;
-  } else {
-    remainingToDeduct -= user.earningsBalance;
-    user.earningsBalance = 0;
-    user.creditBalance -= remainingToDeduct;
-  }
-  
-  await user.save();
+  // Deduct balance
+  let earningsBalance = user.earningsBalance || 0;
+  let creditBalance = user.creditBalance || 0;
+  let remaining = amount;
 
-  // 4. Create notifications for all admins (triggers global Telegram hook)
+  if (earningsBalance >= remaining) {
+    earningsBalance -= remaining;
+  } else {
+    remaining -= earningsBalance;
+    earningsBalance = 0;
+    creditBalance -= remaining;
+  }
+
+  await updateDoc('users', user.id, { earningsBalance, creditBalance });
+
   await notifyAdmins({
     title: 'New Payout Request',
     message: `${user.name} has requested a payout of ${amount} credits.`,
     type: 'warning',
-    metadata: {
-      action_type: 'payout_request',
-      username: user.name,
-      amount: amount,
-      method: 'Bank Transfer'
-    }
+    metadata: { action_type: 'payout_request', username: user.name, amount, method: 'Bank Transfer' },
   });
 
   res.status(201).json(withdrawal);
 };
 
-// Get current author's history
 export const getMyRequests = async (req, res) => {
-  const requests = await Withdrawal.find({ user: req.user._id }).sort({ createdAt: -1 });
-  res.json(requests);
+  const snap = await col.withdrawals().where('userId', '==', req.user.id).orderBy('createdAt', 'desc').get();
+  res.json(snapToArray(snap));
 };
 
-// Get all requests (Admin)
 export const getAdminRequests = async (req, res) => {
-  const requests = await Withdrawal.find().populate('user', 'name email').sort({ createdAt: -1 });
-  res.json(requests);
+  const snap = await col.withdrawals().orderBy('createdAt', 'desc').get();
+  res.json(snapToArray(snap));
 };
 
-// Update request status (Admin)
 export const updatePayoutStatus = async (req, res) => {
   const { status, rejectionReason } = req.body;
-  const withdrawal = await Withdrawal.findById(req.params.id);
+  const withdrawal = await getDocById('withdrawals', req.params.id);
   if (!withdrawal) throw new ApiError(404, 'Request not found');
+
+  const updates = { status };
 
   if (status === 'completed') {
     if (!req.file) throw new ApiError(400, 'Please upload the transfer confirmation slip.');
-    withdrawal.payoutSlip = `/uploads/${req.file.filename}`;
-    withdrawal.status = 'completed';
+    updates.payoutSlip = req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`;
   } else if (status === 'rejected') {
     if (!rejectionReason) throw new ApiError(400, 'Please provide a reason for rejection.');
-    withdrawal.status = 'rejected';
-    withdrawal.rejectionReason = rejectionReason;
+    updates.rejectionReason = rejectionReason;
 
-    // 5. Refund coins on rejection
-    const user = await User.findById(withdrawal.user);
-    if (user) {
-      user.earningsBalance += withdrawal.amount;
-      await user.save();
-    }
+    // Refund
+    await updateDoc('users', withdrawal.userId, {
+      earningsBalance: FieldValue.increment(withdrawal.amount),
+    });
   }
 
-  await withdrawal.save();
+  await updateDoc('withdrawals', withdrawal.id, updates);
 
-  // Re-populate user for frontend consistency
-  const updatedWithdrawal = await Withdrawal.findById(withdrawal._id).populate('user', 'name email');
-
-  // 6. Notify Author
-  await Notification.create({
-    user: withdrawal.user,
+  await triggerNotification({
+    userId: withdrawal.userId,
     title: `Payout ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-    message: status === 'completed' 
-      ? `Your payout of ${withdrawal.amount} credits has been processed successfully. View the slip for details.`
+    message: status === 'completed'
+      ? `Your payout of ${withdrawal.amount} credits has been processed successfully.`
       : `Your payout request was rejected. ${withdrawal.amount} credits have been refunded. Reason: ${rejectionReason}`,
-    type: 'user'
+    type: 'user',
   });
 
-  res.json(updatedWithdrawal);
+  res.json({ ...withdrawal, ...updates });
 };
 
-// Delete a payout request (Admin)
 export const deletePayoutRequest = async (req, res) => {
-  const withdrawal = await Withdrawal.findById(req.params.id);
+  const withdrawal = await getDocById('withdrawals', req.params.id);
   if (!withdrawal) throw new ApiError(404, 'Request not found');
-
-  await Withdrawal.findByIdAndDelete(req.params.id);
+  await col.withdrawals().doc(withdrawal.id).delete();
   res.json({ message: 'Payout record deleted successfully' });
 };

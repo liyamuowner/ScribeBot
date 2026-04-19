@@ -1,8 +1,6 @@
-import CreativeWork from '../models/CreativeWork.js';
+import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
+import { notifyAdmins, triggerNotification } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
-import User from '../models/User.js';
-import Notification from '../models/Notification.js';
-import { notifyAdmins } from '../utils/notificationHelper.js';
 import ispurify from 'isomorphic-dompurify';
 
 const DOMPurify = ispurify;
@@ -11,26 +9,27 @@ export const createWork = async (req, res) => {
   const { title, content, category, language = 'English', tags = [] } = req.body;
   if (!title || !content || !category) throw new ApiError(400, 'Missing required fields');
 
-  const work = await CreativeWork.create({
+  const work = await createDoc('creativeWorks', {
     title,
     content: DOMPurify.sanitize(content),
-    category,
-    language,
-    tags,
-    author: req.user._id,
+    category, language,
+    tags: Array.isArray(tags) ? tags : [],
+    authorId: req.user.id,
+    authorName: req.user.name,
+    authorPicture: req.user.profilePicture || '',
+    status: 'pending',
+    rejectionReason: '',
+    likes: [], likesCount: 0,
+    comments: [],
+    viewCount: 0,
+    isDeleted: false, deletedAt: null,
   });
 
-  // Notify Admins for moderation
   await notifyAdmins({
     title: 'Creative Corner Moderation',
     message: `New creative work "${title}" posted by ${req.user.name}.`,
     type: 'creative',
-    metadata: {
-      action_type: 'creative_submission',
-      title: title,
-      authorName: req.user.name,
-      category: category
-    }
+    metadata: { action_type: 'creative_submission', title, authorName: req.user.name, category },
   });
 
   res.status(201).json(work);
@@ -38,119 +37,112 @@ export const createWork = async (req, res) => {
 
 export const getWorks = async (req, res) => {
   const { search = '', category, language } = req.query;
-  
-  let validAuthorIds = [];
-  if (search) {
-    const matchingUsers = await User.find({ name: { $regex: search, $options: 'i' } }).select('_id');
-    validAuthorIds = matchingUsers.map(u => u._id);
-  }
 
-  const query = {};
-  if (search) {
-    query.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { tags: { $regex: search, $options: 'i' } },
-      { author: { $in: validAuthorIds } }
-    ];
-  }
-  
-  if (category && category !== 'All') query.category = category;
-  if (language && language !== 'All') query.language = language;
-  
-  // Only show approved and non-deleted works in public feed
-  query.status = 'approved';
-  query.isDeleted = { $ne: true };
+  const snap = await col.creativeWorks()
+    .where('status', '==', 'approved')
+    .where('isDeleted', '==', false)
+    .get();
 
-  const works = await CreativeWork.find(query)
-    .populate('author', 'name profilePicture badges')
-    .sort({ createdAt: -1 });
+  let works = snapToArray(snap);
+
+  // Sort by createdAt descending (JS-side to avoid composite index requirement)
+  works.sort((a, b) => {
+    const ta = a.createdAt?.toMillis?.() || new Date(a.createdAt || 0).getTime();
+    const tb = b.createdAt?.toMillis?.() || new Date(b.createdAt || 0).getTime();
+    return tb - ta;
+  });
+
+  if (search) {
+    const s = search.toLowerCase();
+    works = works.filter(w =>
+      w.title?.toLowerCase().includes(s) ||
+      w.authorName?.toLowerCase().includes(s) ||
+      (w.tags || []).some(t => t.toLowerCase().includes(s))
+    );
+  }
+  if (category && category !== 'All') works = works.filter(w => w.category === category);
+  if (language && language !== 'All') works = works.filter(w => w.language === language);
 
   res.json(works);
 };
 
+
 export const getWorkById = async (req, res) => {
-  const work = await CreativeWork.findById(req.params.id)
-    .populate('author', 'name profilePicture badges followersCount')
-    .populate('comments.user', 'name profilePicture');
-    
+  const work = await getDocById('creativeWorks', req.params.id);
   if (!work) throw new ApiError(404, 'Work not found');
 
-  // If not approved, only author or admin can see it
-  if (work.status !== 'approved' && (!req.user || (String(req.user._id) !== String(work.author._id) && req.user.role !== 'admin'))) {
+  if (work.status !== 'approved' && req.user.id !== work.authorId && req.user.role !== 'admin') {
     throw new ApiError(403, 'This work is pending moderation.');
   }
 
-  work.viewCount += 1;
-  await work.save();
-
+  await updateDoc('creativeWorks', work.id, { viewCount: FieldValue.increment(1) });
   res.json(work);
 };
 
 export const likeWork = async (req, res) => {
-  const work = await CreativeWork.findById(req.params.id);
+  const work = await getDocById('creativeWorks', req.params.id);
   if (!work) throw new ApiError(404, 'Work not found');
 
-  const index = work.likes.indexOf(req.user._id);
-  let isLiked = false;
-  if (index === -1) {
-    work.likes.push(req.user._id);
-    work.likesCount += 1;
-    isLiked = true;
+  const likes = work.likes || [];
+  const isLiked = likes.includes(req.user.id);
 
-    if (String(work.author) !== String(req.user._id)) {
-      await Notification.create({
-        user: work.author,
-        title: 'New Like on Creative Corner',
-        message: `${req.user.name} liked your creative work "${work.title}".`,
-        type: 'creative',
-      });
-    }
-  } else {
-    work.likes.splice(index, 1);
-    work.likesCount -= 1;
+  await updateDoc('creativeWorks', work.id, {
+    likes: isLiked ? FieldValue.arrayRemove(req.user.id) : FieldValue.arrayUnion(req.user.id),
+    likesCount: FieldValue.increment(isLiked ? -1 : 1),
+  });
+
+  if (!isLiked && work.authorId !== req.user.id) {
+    await triggerNotification({
+      userId: work.authorId,
+      title: 'New Like on Creative Corner',
+      message: `${req.user.name} liked your creative work "${work.title}".`,
+      type: 'creative',
+    });
   }
 
-  await work.save();
-  res.json({ likesCount: work.likesCount, isLiked });
+  res.json({ likesCount: (work.likesCount || 0) + (isLiked ? -1 : 1), isLiked: !isLiked });
 };
 
 export const addComment = async (req, res) => {
   const { text } = req.body;
-  const work = await CreativeWork.findById(req.params.id);
+  const work = await getDocById('creativeWorks', req.params.id);
   if (!work) throw new ApiError(404, 'Work not found');
 
-  work.comments.push({ user: req.user._id, text: DOMPurify.sanitize(text) });
-  await work.save();
+  const newComment = {
+    id: Date.now().toString(),
+    userId: req.user.id,
+    userName: req.user.name,
+    userPicture: req.user.profilePicture || '',
+    text: DOMPurify.sanitize(text),
+    createdAt: new Date().toISOString(),
+  };
 
-  if (String(work.author) !== String(req.user._id)) {
-    await Notification.create({
-      user: work.author,
+  await updateDoc('creativeWorks', work.id, { comments: FieldValue.arrayUnion(newComment) });
+
+  if (work.authorId !== req.user.id) {
+    await triggerNotification({
+      userId: work.authorId,
       title: 'New Comment on Creative Corner',
       message: `${req.user.name} commented on your work "${work.title}".`,
       type: 'creative',
     });
   }
 
-  const populatedWork = await CreativeWork.findById(work._id).populate('comments.user', 'name profilePicture');
-  res.json(populatedWork.comments);
+  const updated = await getDocById('creativeWorks', work.id);
+  res.json(updated.comments);
 };
 
 export const deleteMyWork = async (req, res) => {
-  const work = await CreativeWork.findById(req.params.id);
+  const work = await getDocById('creativeWorks', req.params.id);
   if (!work) throw new ApiError(404, 'Work not found');
+  if (work.authorId !== req.user.id) throw new ApiError(403, 'Unauthorized');
 
-  if (String(work.author) !== String(req.user._id)) {
-    throw new ApiError(403, 'Unauthorized');
-  }
+  await updateDoc('creativeWorks', work.id, { isDeleted: true, deletedAt: FieldValue.serverTimestamp() });
 
-  work.isDeleted = true;
-  work.deletedAt = new Date();
-  await work.save();
-
-  await Notification.create({
-    user: req.user._id,
+  await triggerNotification({
+    userId: req.user.id,
     title: 'Work Deleted',
-    message: `Your work "${work.title}" has been deleted. You can restore it from your profile.`,
+    message: `Your work "${work.title}" has been deleted.`,
     type: 'creative',
   });
 
@@ -158,28 +150,22 @@ export const deleteMyWork = async (req, res) => {
 };
 
 export const getUserDeletedWorks = async (req, res) => {
-  const works = await CreativeWork.find({ 
-    author: req.user._id, 
-    isDeleted: true 
-  }).sort({ deletedAt: -1 });
-  
-  res.json(works);
+  const snap = await col.creativeWorks()
+    .where('authorId', '==', req.user.id)
+    .where('isDeleted', '==', true)
+    .orderBy('deletedAt', 'desc').get();
+  res.json(snapToArray(snap));
 };
 
 export const restoreWork = async (req, res) => {
-  const work = await CreativeWork.findById(req.params.id);
+  const work = await getDocById('creativeWorks', req.params.id);
   if (!work) throw new ApiError(404, 'Work not found');
+  if (work.authorId !== req.user.id) throw new ApiError(403, 'Unauthorized');
 
-  if (String(work.author) !== String(req.user._id)) {
-    throw new ApiError(403, 'Unauthorized');
-  }
+  await updateDoc('creativeWorks', work.id, { isDeleted: false, deletedAt: null });
 
-  work.isDeleted = false;
-  work.deletedAt = null;
-  await work.save();
-
-  await Notification.create({
-    user: req.user._id,
+  await triggerNotification({
+    userId: req.user.id,
     title: 'Work Restored',
     message: `Your work "${work.title}" has been restored.`,
     type: 'creative',

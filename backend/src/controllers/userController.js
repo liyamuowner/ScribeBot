@@ -1,261 +1,194 @@
-import mongoose from 'mongoose';
-import User from '../models/User.js';
-import Book from '../models/Book.js';
-import VerificationRequest from '../models/VerificationRequest.js';
-import Notification from '../models/Notification.js';
-import CreativeWork from '../models/CreativeWork.js';
+import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
+import { triggerNotification } from '../utils/notificationHelper.js';
+import { adminAuth } from '../config/firebase.js';
 
 export const updateProfile = async (req, res) => {
   const { name, email, phone, bio, theme } = req.body;
   let { socialLinks } = req.body;
 
-  // If socialLinks is a string (due to FormData), parse it
   if (typeof socialLinks === 'string') {
-    try {
-      socialLinks = JSON.parse(socialLinks);
-    } catch (e) {
-      console.error('Failed to parse socialLinks:', e);
-      socialLinks = null;
-    }
-  }
-  
-  if (email && email !== req.user.email) {
-    // Prevent changing the owner email
-    if (req.user.email === 'liyamu.owner@gmail.com') {
-      return res.status(403).json({ message: 'Owner email cannot be changed' });
-    }
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: 'Email already in use' });
-    }
-    req.user.email = email;
+    try { socialLinks = JSON.parse(socialLinks); } catch { socialLinks = null; }
   }
 
-  if (name !== undefined) req.user.name = name;
-  if (phone !== undefined) req.user.phone = phone;
-  if (bio !== undefined) req.user.bio = bio;
-  
-  // Handle file upload for profile picture
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (phone !== undefined) updates.phone = phone;
+  if (bio !== undefined) updates.bio = bio;
+  if (theme) updates['settings.theme'] = theme;
+
   if (req.file) {
-    req.user.profilePicture = req.file.path.startsWith('http') 
-      ? req.file.path 
-      : `/uploads/${req.file.filename}`;
-  }
-  
-  if (theme) req.user.settings.theme = theme;
-  
-  if (socialLinks) {
-    req.user.socialLinks = {
-      facebook: socialLinks.facebook !== undefined ? socialLinks.facebook : req.user.socialLinks.facebook,
-      whatsapp: socialLinks.whatsapp !== undefined ? socialLinks.whatsapp : req.user.socialLinks.whatsapp,
-      telegram: socialLinks.telegram !== undefined ? socialLinks.telegram : req.user.socialLinks.telegram,
-    };
-    req.user.markModified('socialLinks');
+    updates.profilePicture = req.file.path.startsWith('http')
+      ? req.file.path : `/uploads/${req.file.filename}`;
   }
 
-  await req.user.save();
-  res.json(req.user);
+  if (socialLinks) {
+    const current = req.user.socialLinks || {};
+    updates.socialLinks = {
+      facebook: socialLinks.facebook ?? current.facebook ?? '',
+      whatsapp: socialLinks.whatsapp ?? current.whatsapp ?? '',
+      telegram: socialLinks.telegram ?? current.telegram ?? '',
+    };
+  }
+
+  await updateDoc('users', req.user.id, updates);
+  const updated = await getDocById('users', req.user.id);
+  res.json(updated);
 };
 
-
 export const getAuthors = async (req, res) => {
-  const authors = await User.find({ 
-    role: { $in: ['author', 'verified_author', 'pro_writer'] }, 
-    isBanned: false 
-  }).select('-password');
-  const books = await Book.aggregate([{ $group: { _id: '$author', count: { $sum: 1 } } }]);
-  const map = new Map(books.map((b) => [String(b._id), b.count]));
-  res.json(
-    authors.map((a) => ({
-      ...a.toObject(),
-      bookCount: map.get(String(a._id)) || 0,
-    }))
+  const snap = await col.users()
+    .where('role', 'in', ['author', 'verified_author', 'pro_writer'])
+    .where('isBanned', '==', false).get();
+
+  const authors = snapToArray(snap);
+
+  // Count books per author
+  const bookCounts = await Promise.all(
+    authors.map(a => col.books().where('authorId', '==', a.id).where('status', '==', 'approved').get())
   );
+
+  res.json(authors.map((a, i) => ({ ...a, bookCount: bookCounts[i].size })));
 };
 
 export const toggleWishlist = async (req, res) => {
   const { bookId } = req.params;
-  
-  if (!req.user.wishlist) req.user.wishlist = [];
-  
-  const hasBook = req.user.wishlist.some((id) => String(id) === String(bookId));
-  req.user.wishlist = hasBook
-    ? req.user.wishlist.filter((id) => String(id) !== String(bookId))
-    : [...req.user.wishlist, bookId];
-  await req.user.save();
-  res.json({ wishlist: req.user.wishlist });
+  const wishlist = req.user.wishlist || [];
+  const has = wishlist.includes(bookId);
+
+  await updateDoc('users', req.user.id, {
+    wishlist: has ? FieldValue.arrayRemove(bookId) : FieldValue.arrayUnion(bookId),
+  });
+
+  res.json({ wishlist: has ? wishlist.filter(id => id !== bookId) : [...wishlist, bookId] });
 };
 
 export const toggleFollow = async (req, res) => {
-  try {
-    const { authorId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(authorId)) return res.status(400).json({ message: 'Invalid Author ID' });
+  const { authorId } = req.params;
+  const author = await getDocById('users', authorId);
+  if (!author) return res.status(404).json({ message: 'Author not found' });
 
-    const author = await User.findById(authorId);
-    if (!author) return res.status(404).json({ message: 'Author not found' });
+  const following = req.user.following || [];
+  const isFollowing = following.includes(authorId);
 
-    if (!req.user.following) req.user.following = [];
-    const isFollowing = req.user.following.some(id => String(id) === String(authorId));
+  await updateDoc('users', req.user.id, {
+    following: isFollowing ? FieldValue.arrayRemove(authorId) : FieldValue.arrayUnion(authorId),
+  });
 
-    if (isFollowing) {
-      req.user.following = req.user.following.filter(id => String(id) !== String(authorId));
-      author.followersCount = Math.max(0, (author.followersCount || 0) - 1);
-    } else {
-      req.user.following.push(new mongoose.Types.ObjectId(authorId));
-      author.followersCount = (author.followersCount || 0) + 1;
-      await Notification.create({
-        user: authorId,
-        title: 'New Follower!',
-        message: `${req.user.name} started following you.`,
-        type: 'user'
-      });
-    }
+  await updateDoc('users', authorId, {
+    followersCount: FieldValue.increment(isFollowing ? -1 : 1),
+  });
 
-    await req.user.save();
-    await author.save();
-    res.json({ following: req.user.following, followersCount: author.followersCount });
-  } catch (err) {
-    console.error('Toggle Follow Error:', err);
-    res.status(500).json({ message: 'Internal Server Error', error: err.message });
+  if (!isFollowing) {
+    await triggerNotification({
+      userId: authorId,
+      title: 'New Follower!',
+      message: `${req.user.name} started following you.`,
+      type: 'user',
+    });
   }
+
+  const newFollowing = isFollowing ? following.filter(id => id !== authorId) : [...following, authorId];
+  res.json({ following: newFollowing, followersCount: (author.followersCount || 0) + (isFollowing ? -1 : 1) });
 };
 
 export const getFollowedAuthors = async (req, res) => {
-  const user = await User.findById(req.user._id).populate('following', 'name profilePicture role followersCount bio');
-  res.json(user.following);
+  const following = req.user.following || [];
+  if (!following.length) return res.json([]);
+
+  const profiles = await Promise.all(following.map(id => getDocById('users', id)));
+  res.json(profiles.filter(Boolean).map(({ id, name, profilePicture, role, followersCount, bio }) =>
+    ({ id, name, profilePicture, role, followersCount, bio })
+  ));
 };
 
 export const updateReadingProgress = async (req, res) => {
-  try {
-    const { bookId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(bookId)) return res.status(400).json({ message: 'Invalid Book ID' });
+  const { bookId } = req.params;
+  const history = req.user.readingHistory || [];
 
-    const bId = new mongoose.Types.ObjectId(bookId);
-    req.user.lastReadBook = bId;
-    
-    if (!req.user.readingHistory) req.user.readingHistory = [];
-    if (!req.user.readingHistory.some(id => String(id) === String(bookId))) {
-      req.user.readingHistory.push(bId);
-    }
-    
-    await req.user.save();
-    res.json({ lastReadBook: req.user.lastReadBook });
-  } catch (err) {
-    console.error('Update Reading Progress Error:', err);
-    res.status(500).json({ message: 'Internal Server Error', error: err.message });
-  }
+  await updateDoc('users', req.user.id, {
+    lastReadBook: bookId,
+    readingHistory: history.includes(bookId) ? history : FieldValue.arrayUnion(bookId),
+  });
+
+  res.json({ lastReadBook: bookId });
 };
 
 export const toggleBookmark = async (req, res) => {
   const { workId } = req.params;
-  
-  if (!mongoose.Types.ObjectId.isValid(workId)) return res.status(400).json({ message: 'Invalid Work ID' });
+  const bookmarks = req.user.bookmarkedWorks || [];
+  const has = bookmarks.includes(workId);
 
-  if (!req.user.bookmarkedWorks) req.user.bookmarkedWorks = [];
-  
-  const hasBookmarked = req.user.bookmarkedWorks.some((id) => String(id) === String(workId));
-  req.user.bookmarkedWorks = hasBookmarked
-    ? req.user.bookmarkedWorks.filter((id) => String(id) !== String(workId))
-    : [...req.user.bookmarkedWorks, workId];
-    
-  await req.user.save();
-  res.json({ bookmarkedWorks: req.user.bookmarkedWorks });
+  await updateDoc('users', req.user.id, {
+    bookmarkedWorks: has ? FieldValue.arrayRemove(workId) : FieldValue.arrayUnion(workId),
+  });
+
+  res.json({ bookmarkedWorks: has ? bookmarks.filter(id => id !== workId) : [...bookmarks, workId] });
 };
 
 export const getBookmarkedWorks = async (req, res) => {
-  const user = await User.findById(req.user._id).populate({
-    path: 'bookmarkedWorks',
-    populate: { path: 'author', select: 'name profilePicture' }
-  });
-  res.json(user.bookmarkedWorks || []);
+  const ids = req.user.bookmarkedWorks || [];
+  if (!ids.length) return res.json([]);
+  const works = await Promise.all(ids.map(id => getDocById('creativeWorks', id)));
+  res.json(works.filter(Boolean));
 };
 
 export const deleteMyAccount = async (req, res) => {
-  const user = await User.findById(req.user._id);
-  if (!user) throw new Error('User not found');
-
-  // Protect Owner Account
+  const user = req.user;
   if (user.email === 'liyamu.owner@gmail.com') {
     return res.status(403).json({ message: 'Owner account cannot be deleted' });
   }
 
-  // Hard-delete? No, soft-delete per implementation plan for audit/restoration potential.
-  user.isDeleted = true;
-  user.deletedAt = new Date();
-  
-  const originalName = user.name;
-  user.name = `[DELETED USER ${user._id.toString().slice(-4)}]`;
-  user.email = `deleted_${Date.now()}_${user._id}@liyamu.com`;
-  user.password = 'N/A'; // De-authenticate
-  
-  await user.save({ validateBeforeSave: false });
-
-  // Create a notification for audit/final record
-  await Notification.create({
-    user: user._id,
-    title: 'Account Deleted',
-    message: `Hello ${originalName}, your account has been successfully deleted as per your request. If this was a mistake, please contact support within 30 days.`,
-    type: 'user'
+  await updateDoc('users', user.id, {
+    isDeleted: true,
+    deletedAt: FieldValue.serverTimestamp(),
+    name: `[DELETED USER ${user.id.slice(-4)}]`,
+    email: `deleted_${Date.now()}_${user.id}@liyamu.com`,
+    phone: 'N/A',
   });
+
+  // Delete from Firebase Auth
+  try {
+    const fa = adminAuth();
+    if (fa) await fa.deleteUser(user.id);
+  } catch (e) {
+    console.error('Firebase Auth delete failed:', e.message);
+  }
 
   res.json({ success: true, message: 'Account deleted successfully' });
 };
 
 export const getAuthorProfile = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid ID' });
+  const { id } = req.params;
+  const author = await getDocById('users', id);
+  if (!author) return res.status(404).json({ message: 'Author not found' });
 
-    const author = await User.findById(id).select('-password').lean();
-    if (!author) return res.status(404).json({ message: 'Author not found' });
+  const [booksSnap, creativeSnap] = await Promise.all([
+    col.books().where('authorId', '==', id).where('status', '==', 'approved').orderBy('createdAt', 'desc').get(),
+    col.creativeWorks().where('authorId', '==', id).where('status', '==', 'approved').orderBy('createdAt', 'desc').limit(10).get(),
+  ]);
 
-    // Fetch author's books
-    const books = await Book.find({ author: id, status: 'approved' }).sort({ createdAt: -1 });
-    
-    // Fetch author's creative works
-    const creativeWorks = await CreativeWork.find({ author: id, status: 'approved' }).sort({ createdAt: -1 }).limit(10);
-
-    res.json({
-      ...author,
-      books,
-      creativeWorks
-    });
-  } catch (err) {
-    console.error('Get Author Profile Error:', err);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
+  res.json({ ...author, books: snapToArray(booksSnap), creativeWorks: snapToArray(creativeSnap) });
 };
+
 export const updatePassword = async (req, res) => {
   const { currentPassword, newPassword, confirmPassword } = req.body;
-
-  if (!currentPassword || !newPassword || !confirmPassword) {
+  if (!currentPassword || !newPassword || !confirmPassword)
     return res.status(400).json({ message: 'All fields are required' });
-  }
-
-  if (newPassword !== confirmPassword) {
+  if (newPassword !== confirmPassword)
     return res.status(400).json({ message: 'New passwords do not match' });
-  }
+  if (newPassword.length < 6)
+    return res.status(400).json({ message: 'Password must be at least 6 characters' });
 
-  if (newPassword.length < 6) {
-    return res.status(400).json({ message: 'New password must be at least 6 characters' });
-  }
-
-  const user = await User.findById(req.user._id);
-  if (!user) {
-    return res.status(404).json({ message: 'User not found' });
-  }
-
-  if (user.socialProvider !== 'local') {
+  if (req.user.socialProvider !== 'local')
     return res.status(400).json({ message: 'Social accounts cannot change password here' });
+
+  // Firebase Auth handles password updates — this requires re-auth on the client side
+  // Backend updates Firebase Auth user password
+  try {
+    const fa = adminAuth();
+    if (fa) await fa.updateUser(req.user.id, { password: newPassword });
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
-
-  const isMatch = await user.matchPassword(currentPassword);
-  if (!isMatch) {
-    return res.status(401).json({ message: 'Incorrect current password' });
-  }
-
-  user.password = newPassword;
-  await user.save();
-
-  res.json({ message: 'Password updated successfully' });
 };

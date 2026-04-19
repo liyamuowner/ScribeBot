@@ -1,34 +1,39 @@
-import Notification from '../models/Notification.js';
-import User from '../models/User.js';
+import { col, createDoc, snapToArray, FieldValue } from '../config/firestore.js';
 import { sendAdminAlert, formatTelegramMessage } from './telegram.js';
 
 /**
- * Notifies all administrators and sends a single synchronized Telegram alert.
+ * Notifies all administrators and sends a Telegram alert.
  */
 export const notifyAdmins = async ({ title, message, type = 'info', metadata = {} }) => {
-  const admins = await User.find({ role: 'admin' });
-  if (admins.length === 0) return;
-
-  // 1. Send ONE Telegram alert (using the first admin's notification as a template)
+  // Send Telegram alert first (non-blocking)
   const telegramMessage = formatTelegramMessage({ title, message, metadata });
   sendAdminAlert(telegramMessage).catch(err => console.error('Telegram alert failed:', err));
 
-  // 2. Create DB notifications for ALL admins
-  // We add a flag 'telegramSent: true' to metadata to prevent the global hook from double-sending
-  const notificationPromises = admins.map(admin => Notification.create({
-    user: admin._id,
-    title,
-    message,
-    type,
-    metadata: { ...metadata, telegramSent: true }
-  }));
+  // Get all admin UIDs from Firestore
+  const adminsSnap = await col.users().where('role', '==', 'admin').get();
+  if (adminsSnap.empty) return;
 
-  await Promise.all(notificationPromises);
+  const batch = col.users().firestore.batch();
+  adminsSnap.docs.forEach(adminDoc => {
+    const notifRef = col.notifications().doc();
+    batch.set(notifRef, {
+      userId: adminDoc.id,
+      title,
+      message,
+      type,
+      isRead: false,
+      metadata: { ...metadata, telegramSent: true },
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  await batch.commit();
 };
 
 /**
- * Standard trigger for single users
+ * Send a notification to a single user.
  */
 export const triggerNotification = async ({ userId, title, message, type = 'info', metadata = {} }) => {
-  return await Notification.create({ user: userId, title, message, type, metadata });
+  return createDoc('notifications', { userId, title, message, type, isRead: false, metadata });
 };

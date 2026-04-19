@@ -3,9 +3,9 @@
  * Run: node src/seed/seedOwner.js
  */
 import 'dotenv/config';
-import '../config/firebase.js'; // Initialize Firebase Admin
-import { adminAuth } from '../config/firebase.js';
-import { col, FieldValue } from '../config/firestore.js';
+import '../src/config/firebase.js'; // Initialize Firebase Admin
+import { adminAuth } from '../src/config/firebase.js';
+import { col, FieldValue } from '../src/config/firestore.js';
 
 const OWNER_EMAIL = process.env.ADMIN_SEED_EMAIL || 'liyamu.owner@gmail.com';
 const OWNER_PASSWORD = process.env.ADMIN_SEED_PASSWORD || 'Liyamu@0721...';

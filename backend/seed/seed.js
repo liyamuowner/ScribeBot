@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
-import { connectDB } from '../config/db.js';
-import User from '../models/User.js';
-import Book from '../models/Book.js';
+import { connectDB } from '../src/config/db.js';
+import User from '../src/models/User.js';
+import Book from '../src/models/Book.js';
 
 dotenv.config();
 await connectDB();

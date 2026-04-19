@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }) => {
 
   // Listen to Firebase Auth state changes
   useEffect(() => {
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user || null);
     });

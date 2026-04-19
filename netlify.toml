@@ -1,12 +1,10 @@
 [build]
-  command = "npm install --prefix backend --legacy-peer-deps && npm install --prefix frontend --include=dev --legacy-peer-deps && npm run build --prefix frontend && rm -rf backend/src/seed backend/src/server.js"
+  command = "npm install --prefix backend --legacy-peer-deps && npm install --prefix frontend --include=dev --legacy-peer-deps && npm run build --prefix frontend"
   publish = "frontend/dist"
 
 [functions]
   directory = "backend/src"
   node_bundler = "esbuild"
-  node_sourcemap = true
-  output_format = "esm"
   external_node_modules = ["firebase-admin"]
 
 [[redirects]]

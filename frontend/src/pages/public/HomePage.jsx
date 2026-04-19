@@ -41,16 +41,20 @@ const HomePage = () => {
           api.get('/users/authors')
         ]);
         
-        const books = booksRes.data;
+        const books = Array.isArray(booksRes.data) ? booksRes.data : [];
         setTotalBooks(books.length);
         setLatestBooks(books.slice(0, 4)); // Show top 4 latest books
-        setLatestCreative(creativeRes.data.slice(0, 3)); // Show top 3 latest creative works
         
-        if (authorsRes.data && authorsRes.data.length > 0) {
-          setTotalAuthors(authorsRes.data.length);
+        const creative = Array.isArray(creativeRes.data) ? creativeRes.data : [];
+        setLatestCreative(creative.slice(0, 3)); // Show top 3 latest creative works
+        
+        const authors = Array.isArray(authorsRes.data) ? authorsRes.data : [];
+        if (authors.length > 0) {
+          setTotalAuthors(authors.length);
         }
         
-        const booksWithRatings = books.filter(b => b.ratingCount > 0);
+        const booksWithRatings = books.filter(b => b && b.ratingCount > 0);
+
         if (booksWithRatings.length > 0) {
           const totalRating = booksWithRatings.reduce((sum, b) => sum + (b.ratingAverage || 0), 0);
           const avgRating = totalRating / booksWithRatings.length;

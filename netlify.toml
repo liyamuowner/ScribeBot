@@ -1,5 +1,5 @@
 [build]
-  command = "npm install --prefix frontend --include=dev && npm run build --prefix frontend && npm install --prefix backend && rm -rf backend/src/seed backend/src/server.js"
+  command = "npm install --prefix frontend --include=dev && npm run build --prefix frontend && npm install --prefix backend --legacy-peer-deps && rm -rf backend/src/seed backend/src/server.js"
     publish = "frontend/dist"
 
     [functions]

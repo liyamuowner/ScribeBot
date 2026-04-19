@@ -165,7 +165,7 @@ const LibraryPage = () => {
                   src={book.coverUrl ? (book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`) : 'https://via.placeholder.com/300x400?text=No+Cover'} 
                   alt={book.title}
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
+                / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 md:p-6">
                    <div className="flex gap-2">
                      <span className="flex items-center gap-1 text-[9px] md:text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">

@@ -161,7 +161,7 @@ const DashboardLayout = () => {
         <div className="mb-6 flex items-center gap-3 rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
           <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold uppercase dark:bg-slate-800 dark:text-white overflow-hidden border border-white/50 shadow-sm">
              {auth?.profilePicture ? (
-               <img src={auth.profilePicture.startsWith('http') ? auth.profilePicture : `${API_URL}${auth.profilePicture}`} alt="" className="h-full w-full object-cover" />
+               <img src={auth.profilePicture.startsWith('http') ? auth.profilePicture : `${API_URL}${auth.profilePicture}`} alt="" className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
              ) : (
                auth?.name?.[0] || 'U'
              )}

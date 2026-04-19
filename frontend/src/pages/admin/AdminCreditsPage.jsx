@@ -151,7 +151,7 @@ const AdminCreditsPage = () => {
                             src={req.slipUrl?.startsWith('http') ? req.slipUrl : `${API_URL}${req.slipUrl}`} 
                             className="h-full w-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" 
                             alt="Payment Slip" 
-                          />
+                          / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 text-white transition-opacity">
                             <Eye size={20} />
                          </div>
@@ -170,7 +170,7 @@ const AdminCreditsPage = () => {
                          <div className="mt-4 flex flex-wrap gap-4 text-[9px] font-black uppercase tracking-widest text-slate-400">
                             <span className="flex items-center gap-1 text-brand-600"><Coins size={10} /> {req.amount} Credits</span>
                             <span className="flex items-center gap-1 text-slate-900 dark:text-slate-300 font-black">${req.price}</span>
-                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(req.createdAt).toLocaleString()}</span>
+                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(req.createdAt?._seconds ? req.createdAt._seconds * 1000 : req.createdAt).toLocaleString()}</span>
                          </div>
                       </div>
                    </div>
@@ -243,7 +243,7 @@ const AdminCreditsPage = () => {
                          </div>
                          <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400 line-clamp-1 italic">"{tx.description}"</p>
                          <div className="mt-3 flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-slate-300">
-                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(tx.createdAt).toLocaleDateString()}</span>
+                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(tx.createdAt?._seconds ? tx.createdAt._seconds * 1000 : tx.createdAt).toLocaleDateString()}</span>
                             <span className="flex items-center gap-1"><UserIcon size={10} /> Type: {tx.type.replace('_', ' ')}</span>
                          </div>
                       </div>
@@ -424,7 +424,7 @@ const AdminCreditsPage = () => {
                            src={selectedRequest.slipUrl?.startsWith('http') ? selectedRequest.slipUrl : `${API_URL}${selectedRequest.slipUrl}`} 
                            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" 
                            alt="Payment Slip Full" 
-                         />
+                         / onError={(e) => { e.target.onerror = null; e.target.src = "https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff"; }} />
                          <a 
                            href={selectedRequest.slipUrl?.startsWith('http') ? selectedRequest.slipUrl : `${API_URL}${selectedRequest.slipUrl}`} 
                            target="_blank" 

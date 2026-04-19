@@ -141,7 +141,7 @@ const ProfilePage = () => {
                   src={profilePicturePreview.startsWith('blob:') ? profilePicturePreview : `${API_URL}${profilePicturePreview}`} 
                   alt={auth?.name} 
                   className="h-full w-full object-cover" 
-                 />
+                 / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                ) : (
                  <badge.icon size={48} className={badge.badgeColor} />
                )}
@@ -161,7 +161,7 @@ const ProfilePage = () => {
                  {badge.label}
                </span>
                <div className="h-1 w-1 rounded-full bg-slate-700" />
-               <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Joined {new Date(auth?.createdAt).toLocaleDateString()}</span>
+               <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Joined {new Date(auth?.createdAt?._seconds ? auth?.createdAt._seconds * 1000 : auth?.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
@@ -270,7 +270,7 @@ const ProfilePage = () => {
                        <div key={book._id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-6 border border-transparent hover:border-slate-100 transition-all group dark:bg-slate-800/50 dark:hover:border-slate-700">
                           <div className="flex items-center gap-4">
                              <div className="h-12 w-10 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-800">
-                                {book.coverUrl && <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" />}
+                                {book.coverUrl && <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />}
                              </div>
                              <div>
                                 <h4 className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{book.title}</h4>
@@ -319,7 +319,7 @@ const ProfilePage = () => {
                         <div className="flex items-center gap-4 w-full sm:w-auto">
                            <div className="h-10 w-10 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
                               {work.author?.profilePicture ? (
-                                <img src={work.author.profilePicture.startsWith('http') ? work.author.profilePicture : `${API_URL}${work.author.profilePicture}`} className="h-full w-full object-cover" alt="" />
+                                <img src={work.author.profilePicture.startsWith('http') ? work.author.profilePicture : `${API_URL}${work.author.profilePicture}`} className="h-full w-full object-cover" alt="" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                               ) : (
                                 <div className="h-full w-full flex items-center justify-center font-black text-slate-400">{work.author?.name?.charAt(0)}</div>
                               )}
@@ -474,7 +474,7 @@ const ProfilePage = () => {
                  <div key={work._id} className="flex flex-col rounded-2xl bg-slate-50/50 p-6 border border-slate-100 dark:bg-slate-800/30 dark:border-slate-800">
                     <div className="flex justify-between items-start mb-4">
                        <h4 className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{work.title}</h4>
-                       <span className="text-[9px] font-bold text-slate-400">Deleted on {new Date(work.deletedAt).toLocaleDateString()}</span>
+                       <span className="text-[9px] font-bold text-slate-400">Deleted on {new Date(work.deletedAt?._seconds ? work.deletedAt._seconds * 1000 : work.deletedAt).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center gap-3 mt-auto">
                        <button 

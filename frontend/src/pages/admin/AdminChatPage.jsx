@@ -171,7 +171,7 @@ const AdminChatPage = () => {
                         {msg.message}
                       </div>
                       <div className={`flex items-center gap-2 px-1 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                        <span className="text-[9px] font-medium text-slate-400">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-[9px] font-medium text-slate-400">{new Date(msg.createdAt?._seconds ? msg.createdAt._seconds * 1000 : msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     </div>
                   </motion.div>

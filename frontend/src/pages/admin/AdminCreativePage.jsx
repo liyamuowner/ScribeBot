@@ -132,7 +132,7 @@ const AdminCreativePage = () => {
                         <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{work.title}</p>
                         <div className="flex gap-2 mt-1">
                           <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{work.category}</span>
-                          <span className="text-[10px] font-bold text-slate-300">• {new Date(work.createdAt).toLocaleDateString()}</span>
+                          <span className="text-[10px] font-bold text-slate-300">• {new Date(work.createdAt?._seconds ? work.createdAt._seconds * 1000 : work.createdAt).toLocaleDateString()}</span>
                         </div>
                       </td>
                       <td className="px-6 py-6" data-label="Author">

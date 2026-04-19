@@ -147,7 +147,7 @@ const AdminPayoutsPage = () => {
                      <div className="flex items-center gap-5 flex-1">
                         <div className="h-14 w-14 overflow-hidden rounded-[1.5rem] bg-slate-100 flex items-center justify-center text-slate-400 dark:bg-slate-800 border border-slate-50 dark:border-white/5">
                            {req.user?.profilePicture ? (
-                             <img src={req.user.profilePicture.startsWith('http') ? req.user.profilePicture : `${API_URL}${req.user.profilePicture}`} alt="" className="h-full w-full object-cover" />
+                             <img src={req.user.profilePicture.startsWith('http') ? req.user.profilePicture : `${API_URL}${req.user.profilePicture}`} alt="" className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                            ) : (
                              <span className="text-lg font-black uppercase text-slate-300 dark:text-slate-600">{req.user?.name?.charAt(0) || '?'}</span>
                            )}
@@ -156,7 +156,7 @@ const AdminPayoutsPage = () => {
                            <div className="flex items-center gap-3">
                               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase truncate max-w-[150px]">{req.user?.name || 'Unknown Author'}</h3>
                               <span className="rounded-lg bg-slate-50 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-400 dark:bg-slate-800">
-                                 {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A'}
+                                 {req.createdAt ? new Date(req.createdAt?._seconds ? req.createdAt._seconds * 1000 : req.createdAt).toLocaleDateString() : 'N/A'}
                               </span>
                            </div>
                            <div className="mt-2 flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-slate-400">

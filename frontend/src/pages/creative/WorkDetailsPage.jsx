@@ -121,7 +121,7 @@ const WorkDetailsPage = () => {
                 </span>
                 <div className="flex items-center gap-2 text-slate-400">
                    <Clock size={12} />
-                   <span className="text-[9px] font-black uppercase tracking-widest">{new Date(work.createdAt).toLocaleDateString()}</span>
+                   <span className="text-[9px] font-black uppercase tracking-widest">{new Date(work.createdAt?._seconds ? work.createdAt._seconds * 1000 : work.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
 
@@ -213,7 +213,7 @@ const WorkDetailsPage = () => {
                    >
                       <div className="h-10 w-10 rounded-xl overflow-hidden border border-white/10 shrink-0">
                          {comment.user?.profilePicture ? (
-                           <img src={comment.user.profilePicture.startsWith('http') ? comment.user.profilePicture : `${API_URL}${comment.user.profilePicture}`} className="h-full w-full object-cover" />
+                           <img src={comment.user.profilePicture.startsWith('http') ? comment.user.profilePicture : `${API_URL}${comment.user.profilePicture}`} className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                          ) : (
                            <div className="h-full w-full bg-slate-100 flex items-center justify-center font-black dark:bg-slate-800">{comment.user?.name?.charAt(0)}</div>
                          )}
@@ -221,7 +221,7 @@ const WorkDetailsPage = () => {
                       <div className="flex-1">
                          <div className="flex items-center justify-between mb-1">
                             <h4 className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{comment.user?.name}</h4>
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{new Date(comment.createdAt?._seconds ? comment.createdAt._seconds * 1000 : comment.createdAt).toLocaleDateString()}</span>
                          </div>
                          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">{comment.text}</p>
                       </div>
@@ -237,7 +237,7 @@ const WorkDetailsPage = () => {
               <div className="mx-auto h-20 w-20 rounded-[1.5rem] overflow-hidden border-2 border-brand-500 p-1 mb-4">
                  <div className="h-full w-full rounded-xl overflow-hidden">
                     {work.author?.profilePicture ? (
-                      <img src={work.author.profilePicture.startsWith('http') ? work.author.profilePicture : `${API_URL}${work.author.profilePicture}`} alt="" className="h-full w-full object-cover" />
+                      <img src={work.author.profilePicture.startsWith('http') ? work.author.profilePicture : `${API_URL}${work.author.profilePicture}`} alt="" className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                     ) : (
                       <div className="h-full w-full bg-emerald-50 flex items-center justify-center font-black text-emerald-400">{work.author?.name?.charAt(0)}</div>
                     )}

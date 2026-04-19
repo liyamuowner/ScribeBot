@@ -142,7 +142,7 @@ const AdminBooksPage = () => {
                   <td className="px-5 py-5 md:px-8 md:py-6" data-label="Book Details">
                     <div className="flex items-center gap-3 md:gap-4">
                       <div className="h-12 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800 shadow-sm transition-transform group-hover:scale-105">
-                        {book.coverUrl && <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" />}
+                        {book.coverUrl && <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />}
                       </div>
                       <div>
                         <p className="text-[10px] md:text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white max-w-[150px] md:max-w-none truncate">{book.title}</p>
@@ -272,7 +272,7 @@ const AdminBooksPage = () => {
               <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-4">
                   <div className="h-14 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-800 shadow-lg">
-                    {viewingBook.coverUrl && <img src={viewingBook.coverUrl.startsWith('http') ? viewingBook.coverUrl : `${API_URL}${viewingBook.coverUrl}`} className="h-full w-full object-cover" alt="" />}
+                    {viewingBook.coverUrl && <img src={viewingBook.coverUrl.startsWith('http') ? viewingBook.coverUrl : `${API_URL}${viewingBook.coverUrl}`} className="h-full w-full object-cover" alt="" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />}
                   </div>
                   <div>
                     <h2 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">{viewingBook.title}</h2>

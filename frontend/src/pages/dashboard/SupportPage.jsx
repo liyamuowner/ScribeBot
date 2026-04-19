@@ -101,7 +101,7 @@ const SupportPage = () => {
                     {msg.message}
                   </div>
                   <div className={`flex items-center gap-2 px-1 ${isAdmin ? 'justify-start' : 'justify-end'}`}>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase">{new Date(msg.createdAt?._seconds ? msg.createdAt._seconds * 1000 : msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     {!isAdmin && (
                       <Check size={10} className={msg.isRead ? 'text-brand-600' : 'text-slate-300'} />
                     )}

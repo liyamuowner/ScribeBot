@@ -252,7 +252,7 @@ const ReaderPage = () => {
                       <div className="flex items-center gap-4">
                         <div className="h-10 w-10 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-700">
                            {r.user?.profilePicture ? (
-                             <img src={r.user.profilePicture.startsWith('http') ? r.user.profilePicture : `${API_URL}${r.user.profilePicture}`} alt={r.user.name} className="h-full w-full object-cover" />
+                             <img src={r.user.profilePicture.startsWith('http') ? r.user.profilePicture : `${API_URL}${r.user.profilePicture}`} alt={r.user.name} className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                            ) : (
                              <div className="flex h-full w-full items-center justify-center font-black text-slate-400">
                                {r.user?.name?.charAt(0) || 'U'}
@@ -277,7 +277,7 @@ const ReaderPage = () => {
                     </div>
                     
                     <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                       {new Date(r.createdAt).toLocaleDateString()}
+                       {new Date(r.createdAt?._seconds ? r.createdAt._seconds * 1000 : r.createdAt).toLocaleDateString()}
                     </p>
                   </motion.div>
                 ))

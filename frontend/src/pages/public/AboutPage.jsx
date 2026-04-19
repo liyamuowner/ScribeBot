@@ -95,7 +95,7 @@ const AboutPage = () => {
                   src={member.image} 
                   alt={member.name}
                   className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                />
+                / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="mt-8 text-center space-y-2">

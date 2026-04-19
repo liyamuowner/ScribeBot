@@ -83,7 +83,7 @@ const OverviewPage = () => {
                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                   <div className="h-40 w-28 shrink-0 overflow-hidden rounded-2xl shadow-2xl group-hover:scale-105 transition-transform">
                      {lastBook.coverUrl ? (
-                        <img src={lastBook.coverUrl.startsWith('http') ? lastBook.coverUrl : `${API_URL}${lastBook.coverUrl}`} className="h-full w-full object-cover" alt="" />
+                        <img src={lastBook.coverUrl.startsWith('http') ? lastBook.coverUrl : `${API_URL}${lastBook.coverUrl}`} className="h-full w-full object-cover" alt="" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                      ) : (
                         <div className="flex h-full w-full items-center justify-center bg-slate-800 text-slate-600">
                            <BookOpen size={32} />
@@ -127,7 +127,7 @@ const OverviewPage = () => {
                 <div className="relative">
                    <div className={`h-32 w-32 rounded-[2.5rem] border-4 border-white ${badge.color} flex items-center justify-center shadow-xl`}>
                       {auth?.avatar ? (
-                        <img src={auth.avatar.startsWith('http') ? auth.avatar : `${API_URL}${auth.avatar}`} alt={auth.name} className="h-full w-full rounded-[2.5rem] object-cover" />
+                        <img src={auth.avatar.startsWith('http') ? auth.avatar : `${API_URL}${auth.avatar}`} alt={auth.name} className="h-full w-full rounded-[2.5rem] object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                       ) : (
                         <badge.icon size={60} className={badge.badgeColor} />
                       )}
@@ -180,7 +180,7 @@ const OverviewPage = () => {
                    </div>
                    <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Member Since</p>
-                      <p className="text-sm font-bold text-slate-700">{new Date(auth?.createdAt).toLocaleDateString()}</p>
+                      <p className="text-sm font-bold text-slate-700">{new Date(auth?.createdAt?._seconds ? auth?.createdAt._seconds * 1000 : auth?.createdAt).toLocaleDateString()}</p>
                    </div>
                 </div>
                 <div className="flex items-center gap-4">

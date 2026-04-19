@@ -195,7 +195,7 @@ const AdminReviewsPage = () => {
 
                    <div className="mt-8 pt-6 border-t border-slate-50 dark:border-slate-800/50 flex items-center gap-4">
                       <div className="h-12 w-9 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                         {review.book?.coverUrl && <img src={review.book.coverUrl.startsWith('http') ? review.book.coverUrl : `${api.defaults.baseURL.replace('/api', '')}${review.book.coverUrl}`} className="h-full w-full object-cover" />}
+                         {review.book?.coverUrl && <img src={review.book.coverUrl.startsWith('http') ? review.book.coverUrl : `${api.defaults.baseURL.replace('/api', '')}${review.book.coverUrl}`} className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />}
                       </div>
                       <div className="min-w-0">
                          <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Feedback Path</p>

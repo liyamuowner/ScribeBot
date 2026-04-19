@@ -129,7 +129,7 @@ const AuthorProfilePage = () => {
            <div className="relative group">
               <div className={`h-40 w-40 md:h-52 md:w-52 rounded-[3.5rem] border-8 border-white dark:border-slate-900 ${badge.color} flex items-center justify-center shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] group-hover:scale-[1.02] transition-transform duration-500 overflow-hidden`}>
                  {author.profilePicture ? (
-                   <img src={author.profilePicture.startsWith('http') ? author.profilePicture : `${API_URL}${author.profilePicture}`} alt="" className="h-full w-full object-cover" />
+                   <img src={author.profilePicture.startsWith('http') ? author.profilePicture : `${API_URL}${author.profilePicture}`} alt="" className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                  ) : (
                    <badge.icon size={80} className={badge.badgeColor} />
                  )}
@@ -151,7 +151,7 @@ const AuthorProfilePage = () => {
                  </span>
                  <div className="flex items-center gap-1.5 text-slate-400">
                     <Clock size={14} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Joined {new Date(author.createdAt).getFullYear()}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Joined {new Date(author.createdAt?._seconds ? author.createdAt._seconds * 1000 : author.createdAt).getFullYear()}</span>
                  </div>
               </div>
 
@@ -238,7 +238,7 @@ const AuthorProfilePage = () => {
                       <div className="flex gap-6">
                          <div className="h-40 w-28 shrink-0 overflow-hidden rounded-2xl shadow-xl group-hover:scale-105 transition-transform duration-500">
                             {book.coverUrl ? (
-                              <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" />
+                              <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                             ) : (
                               <div className="h-full w-full bg-slate-100 flex items-center justify-center text-slate-300 dark:bg-slate-800"><BookOpen size={30} /></div>
                             )}
@@ -280,7 +280,7 @@ const AuthorProfilePage = () => {
                          <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest dark:bg-emerald-500/10 dark:text-emerald-400">
                             {work.category}
                          </span>
-                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12} /> {new Date(work.createdAt).toLocaleDateString()}</span>
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12} /> {new Date(work.createdAt?._seconds ? work.createdAt._seconds * 1000 : work.createdAt).toLocaleDateString()}</span>
                       </div>
                       <h4 className="text-xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-tight">{work.title}</h4>
                       <Link 

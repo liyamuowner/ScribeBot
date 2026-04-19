@@ -210,11 +210,11 @@ const BuyCreditsPage = () => {
                     <div key={req._id} className="flex flex-col md:flex-row gap-4 md:items-center justify-between p-6 rounded-2xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                        <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 dark:bg-slate-800">
-                             <img src={req.slipUrl} alt="" className="h-10 w-10 object-cover rounded-lg opacity-40 hover:opacity-100 transition-opacity cursor-zoom-in" />
+                             <img src={req.slipUrl} alt="" className="h-10 w-10 object-cover rounded-lg opacity-40 hover:opacity-100 transition-opacity cursor-zoom-in" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                           </div>
                           <div>
                              <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Purchase Instance: {req.amount} Credits</p>
-                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">${req.price} • {new Date(req.createdAt).toLocaleDateString()}</p>
+                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">${req.price} • {new Date(req.createdAt?._seconds ? req.createdAt._seconds * 1000 : req.createdAt).toLocaleDateString()}</p>
                           </div>
                        </div>
                        
@@ -250,7 +250,7 @@ const BuyCreditsPage = () => {
                         </div>
                         <div>
                            <p className="text-xs font-black uppercase text-slate-900 dark:text-white">{tx.description}</p>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(tx.createdAt?._seconds ? tx.createdAt._seconds * 1000 : tx.createdAt).toLocaleDateString()}</p>
                         </div>
                      </div>
                      <div className={`text-sm font-black ${
@@ -355,7 +355,7 @@ const BuyCreditsPage = () => {
                           : 'border-slate-200 group-hover:border-brand-300 group-hover:bg-slate-50 dark:border-slate-700'
                       }`}>
                         {previewUrl ? (
-                          <img src={previewUrl} className="h-32 w-48 object-cover rounded-2xl shadow-xl" alt="Preview" />
+                          <img src={previewUrl} className="h-32 w-48 object-cover rounded-2xl shadow-xl" alt="Preview" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                         ) : (
                           <>
                             <Upload className="text-slate-300 group-hover:text-brand-400 mb-2" size={32} />

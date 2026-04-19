@@ -201,7 +201,7 @@ const HomePage = () => {
                   src={book.coverUrl ? (book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`) : 'https://via.placeholder.com/300x400?text=No+Cover'} 
                   alt={book.title}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
+                / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                 <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center dark:bg-slate-950/60">
                    <button 
                     onClick={() => auth ? navigate(`/dashboard/library/${book._id}`) : navigate('/auth')}
@@ -238,14 +238,14 @@ const HomePage = () => {
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800 border border-white/10">
                     {work.author?.profilePicture ? (
-                      <img src={work.author.profilePicture.startsWith('http') ? work.author.profilePicture : `${API_URL}${work.author.profilePicture}`} alt="" className="h-full w-full object-cover" />
+                      <img src={work.author.profilePicture.startsWith('http') ? work.author.profilePicture : `${API_URL}${work.author.profilePicture}`} alt="" className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                     ) : (
                       <div className="h-full w-full flex items-center justify-center font-black text-slate-400">{work.author?.name?.charAt(0)}</div>
                     )}
                   </div>
                   <div>
                     <h4 className="text-sm font-black text-slate-900 dark:text-white">{work.author?.name}</h4>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{new Date(work.createdAt).toLocaleDateString()}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{new Date(work.createdAt?._seconds ? work.createdAt._seconds * 1000 : work.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <span className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest dark:bg-emerald-500/10 dark:text-emerald-400">

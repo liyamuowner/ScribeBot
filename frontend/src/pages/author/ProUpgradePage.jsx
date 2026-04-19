@@ -94,7 +94,7 @@ const ProUpgradePage = () => {
             <div>
               <h3 className="text-xl font-black uppercase tracking-tight">You are a Pro Member!</h3>
               <p className="text-xs font-bold opacity-80 uppercase tracking-widest">
-                Expires on: {new Date(auth.proExpiryDate).toLocaleDateString()}
+                Expires on: {new Date(auth.proExpiryDate?._seconds ? auth.proExpiryDate._seconds * 1000 : auth.proExpiryDate).toLocaleDateString()}
               </p>
             </div>
           </div>

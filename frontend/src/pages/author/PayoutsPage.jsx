@@ -237,7 +237,7 @@ const PayoutsPage = () => {
                                 <div>
                                    <div className="flex items-center gap-2">
                                       <h4 className="text-sm font-black text-slate-900 dark:text-white">{req.amount} Credits</h4>
-                                      <span className="text-[10px] text-slate-400 font-medium">• {new Date(req.createdAt).toLocaleDateString()}</span>
+                                      <span className="text-[10px] text-slate-400 font-medium">• {new Date(req.createdAt?._seconds ? req.createdAt._seconds * 1000 : req.createdAt).toLocaleDateString()}</span>
                                    </div>
                                    <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${status.color.split(' ')[0]}`}>
                                       {status.label}
@@ -307,7 +307,7 @@ const PayoutsPage = () => {
                   </button>
                </div>
                <div className="aspect-[4/5] rounded-[2rem] overflow-hidden bg-slate-50 dark:bg-slate-800">
-                  <img src={`${API_URL.replace('/api', '')}${showSlip}`} className="h-full w-full object-contain" alt="Payout Slip" />
+                  <img src={`${API_URL.replace('/api', '')}${showSlip}`} className="h-full w-full object-contain" alt="Payout Slip" / onError={(e) => { e.target.onerror = null; e.target.src = "https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff"; }} />
                </div>
             </motion.div>
           </div>

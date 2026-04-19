@@ -178,7 +178,7 @@ const AuthorsPage = () => {
                          src={author.profilePicture.startsWith('http') ? author.profilePicture : `${API_URL}${author.profilePicture}`} 
                          alt="" 
                          className="h-full w-full object-cover" 
-                        />
+                        / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                       ) : (
                        <div className="flex h-full w-full items-center justify-center text-3xl font-black text-brand-600 bg-brand-50 dark:bg-brand-500/10 uppercase">
                           {author.name[0]}
@@ -197,7 +197,7 @@ const AuthorsPage = () => {
                      {badge.label}
                   </span>
                   <p className="mt-4 text-xs font-medium text-slate-500 line-clamp-2 leading-relaxed dark:text-slate-400">
-                     {author.bio || `Creative mind shaping stories on Liyamu since ${new Date(author.createdAt).getFullYear()}.`}
+                     {author.bio || `Creative mind shaping stories on Liyamu since ${new Date(author.createdAt?._seconds ? author.createdAt._seconds * 1000 : author.createdAt).getFullYear()}.`}
                   </p>
                </div>
 

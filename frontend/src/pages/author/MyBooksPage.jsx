@@ -68,7 +68,7 @@ const MyBooksPage = () => {
                   {/* Cover Preview */}
                   <div className="relative h-64 w-full sm:h-48 sm:w-36 shrink-0 overflow-hidden rounded-2xl bg-slate-100 shadow-lg group-hover:scale-105 transition-transform duration-500">
                     {book.coverUrl ? (
-                      <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" />
+                      <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-slate-200">
                         <BookOpen size={48} />

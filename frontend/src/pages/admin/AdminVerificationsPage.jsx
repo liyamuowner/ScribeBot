@@ -197,7 +197,7 @@ const AdminVerificationsPage = () => {
                        </span>
                     </td>
                     <td className="px-6 py-6 text-xs font-black text-slate-500 dark:text-slate-600" data-label="Date Actioned">
-                       {new Date(item.reviewedAt || item.updatedAt).toLocaleDateString()}
+                       {new Date(item.reviewedAt || item.updatedAt?._seconds ? item.reviewedAt || item.updatedAt._seconds * 1000 : item.reviewedAt || item.updatedAt).toLocaleDateString()}
                     </td>
                     <td className="px-8 py-6 text-right" data-label="Admin">
                        <div className="flex items-center justify-end gap-2 text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-slate-400">

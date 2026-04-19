@@ -121,7 +121,7 @@ const NotificationsPage = () => {
                     <div className="mt-4 flex items-center gap-4">
                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-1">
                          <Clock size={10} />
-                         {new Date(item.createdAt).toLocaleDateString()} @ {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                         {new Date(item.createdAt?._seconds ? item.createdAt._seconds * 1000 : item.createdAt).toLocaleDateString()} @ {new Date(item.createdAt?._seconds ? item.createdAt._seconds * 1000 : item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                        </span>
                        
                        {item.link && (

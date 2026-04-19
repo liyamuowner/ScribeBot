@@ -19,6 +19,8 @@ const getStorage = (folder) => {
                                process.env.CLOUDINARY_API_KEY && 
                                process.env.CLOUDINARY_API_SECRET;
 
+  const isServerless = !!process.env.NETLIFY || !!process.env.LAMBDA_TASK_ROOT || process.env.NODE_ENV === 'production';
+
   if (isCloudinaryConfigured) {
     return new CloudinaryStorage({
       cloudinary: cloudinary,
@@ -31,13 +33,14 @@ const getStorage = (folder) => {
     });
   }
 
-  // Use memory storage in production/Netlify to avoid EROFS: read-only file system
-  if (process.env.NODE_ENV === 'production') {
-    console.warn('[Storage] Cloudinary not fully configured. Using memory storage fallback.');
+  // FORCE Memory Storage in Serverless/Production environments
+  if (isServerless) {
+    console.warn(`[Storage] Serverless detected. Cloudinary configured: ${!!isCloudinaryConfigured}. Using memory storage.`);
     return multer.memoryStorage();
   }
 
-  // Local storage for development only
+  // Local storage for development only (only if NOT serverless)
+  console.log('[Storage] Local environment detected. Using disk storage.');
   return multer.diskStorage({
     destination: 'uploads/',
     filename: (req, file, cb) => {

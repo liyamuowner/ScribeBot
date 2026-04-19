@@ -1,13 +1,14 @@
 [build.environment]
   NODE_VERSION = "20"
   NODE_ENV = "production"
+  VITE_API_URL = ""
 
 [build]
   command = "npm install --prefix backend --legacy-peer-deps && npm install --prefix frontend --include=dev --legacy-peer-deps && npm run build --prefix frontend"
   publish = "frontend/dist"
 
 [functions]
-  directory = "backend/src"
+  directory = "netlify/functions"
   node_bundler = "esbuild"
   external_node_modules = ["firebase-admin"]
 

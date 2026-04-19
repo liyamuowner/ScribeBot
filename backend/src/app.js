@@ -25,7 +25,7 @@ import contactRoutes from './routes/contactRoutes.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 import { ensureUploadsDir } from './utils/ensureUploadsDir.js';
 
-ensureUploadsDir();
+// ensureUploadsDir();
 
 const app = express();
 
@@ -37,7 +37,7 @@ app.use(cookieParser());
 app.use(hpp());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 5000 }));
 if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
-app.use('/uploads', express.static('uploads'));
+// app.use('/uploads', express.static('uploads'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, app: 'LIYAMU API', db: 'Firestore' }));
 app.use('/api/auth', authRoutes);

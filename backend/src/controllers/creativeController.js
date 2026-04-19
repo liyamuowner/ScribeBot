@@ -1,9 +1,17 @@
 import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
 import { notifyAdmins, triggerNotification } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
-import ispurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 
-const DOMPurify = ispurify;
+const DOMPurify = {
+  sanitize: (content) => sanitizeHtml(content, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat([ 'img', 'h1', 'h2' ]),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      '*': ['style', 'class'],
+    }
+  })
+};
 
 export const createWork = async (req, res) => {
   const { title, content, category, language = 'English', tags = [] } = req.body;

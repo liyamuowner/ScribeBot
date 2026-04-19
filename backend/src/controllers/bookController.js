@@ -2,6 +2,7 @@ import { col, getDocById, createDoc, updateDoc, deleteDoc, snapToArray, runTrans
 import { notifyAdmins } from '../utils/notificationHelper.js';
 import { triggerNotification } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
+import { uploadBufferToCloudinary } from '../utils/cloudinaryHelper.js';
 
 export const createBook = async (req, res) => {
   const allowedRoles = ['author', 'verified_author', 'pro_writer'];
@@ -15,14 +16,22 @@ export const createBook = async (req, res) => {
 
   if (req.files) {
     if (req.files.cover) {
-      coverUrl = req.files.cover[0].path.startsWith('http')
-        ? req.files.cover[0].path
-        : `/uploads/${req.files.cover[0].filename}`;
+      if (req.files.cover[0].buffer) {
+        coverUrl = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'books/covers', 'image');
+      } else {
+        coverUrl = req.files.cover[0].path && req.files.cover[0].path.startsWith('http')
+          ? req.files.cover[0].path
+          : `/uploads/${req.files.cover[0].filename}`;
+      }
     }
     if (req.files.pdf) {
-      pdfUrl = req.files.pdf[0].path.startsWith('http')
-        ? req.files.pdf[0].path
-        : `/uploads/${req.files.pdf[0].filename}`;
+      if (req.files.pdf[0].buffer) {
+        pdfUrl = await uploadBufferToCloudinary(req.files.pdf[0].buffer, 'books/pdfs', 'raw');
+      } else {
+        pdfUrl = req.files.pdf[0].path && req.files.pdf[0].path.startsWith('http')
+          ? req.files.pdf[0].path
+          : `/uploads/${req.files.pdf[0].filename}`;
+      }
     }
   }
 

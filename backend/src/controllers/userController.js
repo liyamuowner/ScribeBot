@@ -1,6 +1,7 @@
 import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
 import { triggerNotification } from '../utils/notificationHelper.js';
 import { adminAuth } from '../config/firebase.js';
+import { uploadBufferToCloudinary } from '../utils/cloudinaryHelper.js';
 
 export const updateProfile = async (req, res) => {
   const { name, email, phone, bio, theme } = req.body;
@@ -17,8 +18,12 @@ export const updateProfile = async (req, res) => {
   if (theme) updates['settings.theme'] = theme;
 
   if (req.file) {
-    updates.profilePicture = req.file.path.startsWith('http')
-      ? req.file.path : `/uploads/${req.file.filename}`;
+    let fileUrl = req.file.path;
+    if (req.file.buffer) {
+      fileUrl = await uploadBufferToCloudinary(req.file.buffer, 'profiles', 'image');
+    }
+    updates.profilePicture = fileUrl && fileUrl.startsWith('http')
+      ? fileUrl : `/uploads/${req.file.filename}`;
   }
 
   if (socialLinks) {

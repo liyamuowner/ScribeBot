@@ -21,6 +21,12 @@ const getStorage = (folder) => {
 
   const isServerless = !!process.env.NETLIFY || !!process.env.LAMBDA_TASK_ROOT || process.env.NODE_ENV === 'production';
 
+  // FORCE Memory Storage in Serverless/Production environments
+  if (isServerless) {
+    console.warn(`[Storage] Serverless detected. Cloudinary configured: ${!!isCloudinaryConfigured}. Using memory storage.`);
+    return multer.memoryStorage();
+  }
+
   if (isCloudinaryConfigured) {
     return new CloudinaryStorage({
       cloudinary: cloudinary,
@@ -31,12 +37,6 @@ const getStorage = (folder) => {
         public_id: (req, file) => `${Date.now()}-${file.originalname.split('.')[0]}`,
       },
     });
-  }
-
-  // FORCE Memory Storage in Serverless/Production environments
-  if (isServerless) {
-    console.warn(`[Storage] Serverless detected. Cloudinary configured: ${!!isCloudinaryConfigured}. Using memory storage.`);
-    return multer.memoryStorage();
   }
 
   // Local storage for development only (only if NOT serverless)

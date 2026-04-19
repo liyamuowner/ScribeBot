@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
 import { notifyAdmins, triggerNotification } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
@@ -73,9 +74,10 @@ export const decideVerification = async (req, res) => {
       type: 'verification',
     });
 
-    // PDF Certificate
-    const outputDir = path.resolve('uploads');
+    // PDF Certificate - Using os.tmpdir() for serverless compatibility
+    const outputDir = process.env.NODE_ENV === 'production' ? os.tmpdir() : path.resolve('uploads');
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+    
     const pdfPath = path.join(outputDir, `verification-${request.authorId}.pdf`);
     const doc = new PDFDocument();
     const stream = fs.createWriteStream(pdfPath);

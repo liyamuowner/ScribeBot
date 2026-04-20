@@ -43,15 +43,25 @@ const AuthorProfilePage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Primary data fetch
       const { data } = await api.get(`/users/${id}`);
       setAuthor(data);
       
+      // Secondary auth check (non-blocking)
       if (auth) {
-        const meRes = await api.get('/auth/me');
-        setFollowingIds(meRes.data.following || []);
+        try {
+          const meRes = await api.get('/auth/me');
+          setFollowingIds(meRes.data.following || []);
+        } catch (meErr) {
+          console.warn('Session check failed, following status may be unavailable:', meErr.message);
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Author Profile Load Error:', {
+        id,
+        status: err.response?.status,
+        message: err.response?.data?.message || err.message
+      });
       toast.error('Failed to load profile');
       navigate('/dashboard/authors');
     } finally {

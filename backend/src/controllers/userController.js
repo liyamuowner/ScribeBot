@@ -174,8 +174,8 @@ export const getAuthorProfile = async (req, res) => {
   if (!author) return res.status(404).json({ message: 'Author not found' });
 
   const [booksSnap, creativeSnap] = await Promise.all([
-    col.books().where('authorId', '==', id).where('status', '==', 'approved').orderBy('createdAt', 'desc').get(),
-    col.creativeWorks().where('authorId', '==', id).where('status', '==', 'approved').orderBy('createdAt', 'desc').limit(10).get(),
+    col.books().where('authorId', '==', id).where('status', '==', 'approved').get(),
+    col.creativeWorks().where('authorId', '==', id).where('status', '==', 'approved').limit(20).get(),
   ]);
 
   res.json({ ...author, books: snapToArray(booksSnap), creativeWorks: snapToArray(creativeSnap) });

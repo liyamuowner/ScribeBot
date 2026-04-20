@@ -22,8 +22,14 @@ export const updateProfile = async (req, res) => {
     if (req.file.buffer) {
       fileUrl = await uploadBufferToCloudinary(req.file.buffer, 'profiles', 'image');
     }
-    updates.profilePicture = fileUrl && fileUrl.startsWith('http')
-      ? fileUrl : `/uploads/${req.file.filename}`;
+    
+    if (fileUrl && fileUrl.startsWith('http')) {
+      updates.profilePicture = fileUrl;
+    } else if (req.file.filename) {
+      // Only fallback to local uploads if not in a serverless environment
+      // In serverless, req.file.path might be a temporary location
+      updates.profilePicture = `/uploads/${req.file.filename}`;
+    }
   }
 
   if (socialLinks) {

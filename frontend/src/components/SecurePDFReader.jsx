@@ -150,7 +150,7 @@ const SecurePDFReader = ({ fileUrl, coverUrl, title }) => {
               loading={
                 <div className="relative w-full h-full min-h-[500px] flex flex-col items-center justify-center gap-6 overflow-hidden rounded-[2.5rem]">
                   <div className="absolute inset-0 z-0">
-                    <img src={coverUrl} alt="" className="w-full h-full object-cover blur-xl opacity-20 scale-110" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
+                    <img src={coverUrl} alt="" className="w-full h-full object-cover blur-xl opacity-20 scale-110"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                     <div className="absolute inset-0 bg-slate-950/40" />
                   </div>
                   <div className="relative z-10 flex flex-col items-center gap-4">
@@ -182,7 +182,7 @@ const SecurePDFReader = ({ fileUrl, coverUrl, title }) => {
           <div className="w-full h-full min-h-[600px] relative flex items-center justify-center overflow-hidden rounded-[3rem]">
             {/* Immersive Cover Page Background */}
             <div className="absolute inset-0 z-0 scale-105">
-              <img src={coverUrl} alt="" className="w-full h-full object-cover blur-2xl opacity-50" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
+              <img src={coverUrl} alt="" className="w-full h-full object-cover blur-2xl opacity-50"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
               <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-slate-950/90" />
             </div>
 
@@ -193,7 +193,7 @@ const SecurePDFReader = ({ fileUrl, coverUrl, title }) => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 className="w-48 md:w-64 aspect-[3/4] rounded-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10"
               >
-                <img src={coverUrl} alt={title} className="w-full h-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
+                <img src={coverUrl} alt={title} className="w-full h-full object-cover"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
               </motion.div>
 
               <div className="space-y-6">

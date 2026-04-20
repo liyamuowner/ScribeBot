@@ -11,9 +11,9 @@ import { uploadSlip } from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
-// Author Routes
-router.post('/request', protect, authorize('author'), createPayoutRequest);
-router.get('/mine', protect, authorize('author'), getMyRequests);
+// Author Routes (all author-tier roles are eligible for payouts)
+router.post('/request', protect, authorize('author', 'verified_author', 'pro_writer'), createPayoutRequest);
+router.get('/mine', protect, authorize('author', 'verified_author', 'pro_writer'), getMyRequests);
 
 // Admin Routes
 router.get('/admin', protect, authorize('admin'), getAdminRequests);

@@ -83,7 +83,7 @@ const OverviewPage = () => {
                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                   <div className="h-40 w-28 shrink-0 overflow-hidden rounded-2xl shadow-2xl group-hover:scale-105 transition-transform">
                      {lastBook.coverUrl ? (
-                        <img src={lastBook.coverUrl.startsWith('http') ? lastBook.coverUrl : `${API_URL}${lastBook.coverUrl}`} className="h-full w-full object-cover" alt="" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
+                        <img src={lastBook.coverUrl.startsWith('http') ? lastBook.coverUrl : `${API_URL}${lastBook.coverUrl}`} className="h-full w-full object-cover" alt=""  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                      ) : (
                         <div className="flex h-full w-full items-center justify-center bg-slate-800 text-slate-600">
                            <BookOpen size={32} />
@@ -102,7 +102,7 @@ const OverviewPage = () => {
                      </p>
                      
                      <Link 
-                       to={`/dashboard/library/${lastBook._id}`}
+                       to={`/dashboard/library/${lastBook.id}`}
                        className="inline-flex items-center gap-3 rounded-2xl bg-white px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-900 hover:bg-brand-500 hover:text-white transition-all shadow-xl shadow-white/5 active:scale-95"
                      >
                         Resume Reading
@@ -126,8 +126,8 @@ const OverviewPage = () => {
              <div className="flex flex-col md:flex-row items-center md:items-end text-center md:text-left gap-4 md:gap-6">
                 <div className="relative">
                    <div className={`h-32 w-32 rounded-[2.5rem] border-4 border-white ${badge.color} flex items-center justify-center shadow-xl`}>
-                      {auth?.avatar ? (
-                        <img src={auth.avatar.startsWith('http') ? auth.avatar : `${API_URL}${auth.avatar}`} alt={auth.name} className="h-full w-full rounded-[2.5rem] object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
+                      {auth?.profilePicture ? (
+                        <img src={auth.profilePicture.startsWith('http') ? auth.profilePicture : `${API_URL}${auth.profilePicture}`} alt={auth.name} className="h-full w-full rounded-[2.5rem] object-cover" onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                       ) : (
                         <badge.icon size={60} className={badge.badgeColor} />
                       )}

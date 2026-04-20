@@ -83,7 +83,7 @@ const Navbar = () => {
               {actionLink.name}
               <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/20 overflow-hidden">
                 {auth?.profilePicture ? (
-                  <img src={auth.profilePicture.startsWith('http') ? auth.profilePicture : `${API_URL}${auth.profilePicture}`} alt="" className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
+                  <img src={auth.profilePicture.startsWith('http') ? auth.profilePicture : `${API_URL}${auth.profilePicture}`} alt="" className="h-full w-full object-cover"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                 ) : (
                   <actionLink.icon size={14} strokeWidth={3} />
                 )}

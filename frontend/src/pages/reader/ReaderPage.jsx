@@ -5,6 +5,7 @@ import { Star, Send, MessageSquare, AlertCircle, Quote, Users, ShieldCheck, Coin
 import api from '../../api/client';
 import SecurePDFReader from '../../components/SecurePDFReader';
 import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const ReaderPage = () => {
   const { auth, setAuth } = useAuth();
@@ -60,8 +61,9 @@ const ReaderPage = () => {
   };
 
   const handlePurchase = async () => {
-    if (auth.creditBalance < book.price) {
-      alert(`Insufficient credits. You need ${book.price} credits.`);
+    const totalBalance = (auth.creditBalance || 0) + (auth.earningsBalance || 0);
+    if (totalBalance < book.price) {
+      toast.error(`Insufficient credits. You need ${book.price} credits.`);
       return;
     }
 
@@ -73,11 +75,10 @@ const ReaderPage = () => {
         creditBalance: data.balance,
         purchasedBooks: [...(auth.purchasedBooks || []), id] 
       });
-      alert('Purchase successful! Unlocking content...');
+      toast.success('Purchase successful! Unlocking content...');
       load();
     } catch (err) {
-      console.error(err);
-      alert('Purchase failed.');
+      toast.error(err.response?.data?.message || 'Purchase failed.');
     } finally {
       setIsBuying(false);
     }
@@ -102,22 +103,22 @@ const ReaderPage = () => {
             <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900 dark:text-white leading-tight">{book.title}</h1>
             <div className="mt-3 md:mt-4 flex flex-wrap items-center gap-3 md:gap-4">
                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-black uppercase">
-                     {book.author?.name?.charAt(0)}
-                  </div>
-                  <span className="text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">{book.author?.name}</span>
-               </div>
-               <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
-               <div className="flex items-center gap-2 text-brand-600">
-                  <Star size={16} fill="currentColor" />
-                  <span className="text-sm font-black tracking-tight">{book.ratingAverage.toFixed(1)}</span>
-                  <span className="text-[10px] font-bold text-slate-400 capitalize">({book.ratingCount} reviews)</span>
-               </div>
-               <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
-               <div className="flex items-center gap-2 text-slate-400">
-                  <Users size={14} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">{book.author?.followersCount || 0} Followers</span>
-               </div>
+                   <div className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-black uppercase">
+                      {book.authorName?.charAt(0)}
+                   </div>
+                   <span className="text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">{book.authorName}</span>
+                </div>
+                <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
+                <div className="flex items-center gap-2 text-brand-600">
+                   <Star size={16} fill="currentColor" />
+                   <span className="text-sm font-black tracking-tight">{(book.ratingAverage || 0).toFixed(1)}</span>
+                   <span className="text-[10px] font-bold text-slate-400 capitalize">({book.ratingCount} reviews)</span>
+                </div>
+                <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
+                <div className="flex items-center gap-2 text-slate-400">
+                   <Users size={14} />
+                   <span className="text-[10px] font-black uppercase tracking-widest">{book.followersCount || 0} Followers</span>
+                </div>
             </div>
           </div>
           
@@ -242,7 +243,7 @@ const ReaderPage = () => {
               {book.reviews?.length > 0 ? (
                 book.reviews.map((r, i) => (
                   <motion.div 
-                    key={r._id}
+                    key={r.id || i}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
@@ -250,17 +251,11 @@ const ReaderPage = () => {
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-700">
-                           {r.user?.profilePicture ? (
-                             <img src={r.user.profilePicture.startsWith('http') ? r.user.profilePicture : `${API_URL}${r.user.profilePicture}`} alt={r.user.name} className="h-full w-full object-cover" / onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
-                           ) : (
-                             <div className="flex h-full w-full items-center justify-center font-black text-slate-400">
-                               {r.user?.name?.charAt(0) || 'U'}
-                             </div>
-                           )}
+                        <div className="h-10 w-10 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-black text-slate-400">
+                           {r.userName?.charAt(0) || 'U'}
                         </div>
                         <div>
-                          <p className="text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">{r.user?.name}</p>
+                          <p className="text-sm font-black uppercase tracking-tight text-slate-900 dark:text-white">{r.userName || 'Reader'}</p>
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verified Reader</p>
                         </div>
                       </div>

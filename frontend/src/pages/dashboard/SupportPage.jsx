@@ -87,7 +87,7 @@ const SupportPage = () => {
             const isAdmin = msg.sender === 'admin';
             return (
               <motion.div 
-                key={msg._id}
+                key={msg.id}
                 initial={{ opacity: 0, x: isAdmin ? -20 : 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className={`flex ${isAdmin ? 'justify-start' : 'justify-end'}`}

@@ -85,8 +85,8 @@ const App = () => {
               <Route path="credits" element={<BuyCreditsPage />} />
 
               <Route path="creative" element={<CreativeCornerPage />} />
-              <Route path="creative/:id" element={<WorkDetailsPage />} />
               <Route path="creative/new" element={<CreateWorkPage />} />
+              <Route path="creative/:id" element={<WorkDetailsPage />} />
 
               <Route path="verification" element={<VerificationPage />} />
 

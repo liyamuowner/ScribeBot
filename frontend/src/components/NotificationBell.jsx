@@ -21,7 +21,7 @@ const NotificationBell = () => {
   useEffect(() => {
     if (auth) {
       fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 15000);
+      const interval = setInterval(fetchUnreadCount, 60000); // Increased to 60s for resource efficiency
       return () => clearInterval(interval);
     }
   }, [auth]);

@@ -108,7 +108,7 @@ const DashboardLayout = () => {
       <div className="flex h-20 items-center justify-between border-b border-slate-100 px-8 dark:border-slate-800">
         <Link to="/" className="flex items-center gap-3" onClick={onClose}>
            <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.25)] border border-brand-500/20">
-             <video src="/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-screen" />
+             <video src="https://res.cloudinary.com/dmoiunaru/video/upload/v1776676540/liyamu_assets/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-screen" />
            </div>
            <span className="text-xl font-black tracking-widest text-slate-900 uppercase dark:text-white">Liyamu</span>
         </Link>

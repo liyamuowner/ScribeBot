@@ -128,7 +128,7 @@ const HomePage = () => {
               loop 
               muted 
               playsInline
-              src="/video.mp4" 
+              src="https://res.cloudinary.com/dmoiunaru/video/upload/v1776676555/liyamu_assets/video.mp4" 
               className="relative rounded-[3rem] object-cover shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] w-full h-[300px] md:h-[500px] border border-white dark:border-slate-800" 
             />
             <motion.div 

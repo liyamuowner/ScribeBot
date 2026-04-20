@@ -4,9 +4,9 @@ import { Target, Eye, Users, Award } from 'lucide-react';
 
 const AboutPage = () => {
   const team = [
-    { name: 'Aminda Didula', role: 'Owner & Head Developer', image: '/Aminda Didula.jpg' },
-    { name: 'Janindu Karunathilaka', role: 'IT Developer', image: '/Janindu Karunathilaka.png' },
-    { name: 'Anton Trewon', role: 'Admin', image: '/Anton Trewon.png' },
+    { name: 'Aminda Didula', role: 'Owner & Head Developer', image: 'https://res.cloudinary.com/dmoiunaru/image/upload/v1776676611/liyamu_assets/aminda_didula.jpg' },
+    { name: 'Janindu Karunathilaka', role: 'IT Developer', image: 'https://res.cloudinary.com/dmoiunaru/image/upload/v1776676578/liyamu_assets/janindu_karunathilaka.png' },
+    { name: 'Anton Trewon', role: 'Admin', image: 'https://res.cloudinary.com/dmoiunaru/image/upload/v1776676610/liyamu_assets/anton_trewon.png' },
   ];
 
   return (

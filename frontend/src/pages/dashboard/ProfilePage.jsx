@@ -23,7 +23,6 @@ const ProfilePage = () => {
   const [bookmarkedWorks, setBookmarkedWorks] = useState([]);
   const [message, setMessage] = useState('');
   const [profilePictureFile, setProfilePictureFile] = useState(null);
-  const [profilePicturePreview, setProfilePicturePreview] = useState(auth?.profilePicture || '');
   const [deletedWorks, setDeletedWorks] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -44,15 +43,19 @@ const ProfilePage = () => {
     api.get('/creative/my/deleted').then(res => setDeletedWorks(res.data));
   }, [isAuthor]);
 
-  const handleProfilePictureChange = (e) => {
-    const file = e.target.files[0];
+  // Sync profile picture preview when auth state updates
+  useEffect(() => {
+    if (auth?.profilePicture) {
+      setProfilePicturePreview(auth.profilePicture);
+    }
+  }, [auth?.profilePicture]);
+
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
         setMessage('Image size must be less than 10MB');
         return;
       }
       setProfilePictureFile(file);
-      setProfilePicturePreview(URL.createObjectURL(file));
     }
   };
 
@@ -136,12 +139,15 @@ const ProfilePage = () => {
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 relative z-10 w-full sm:w-auto">
           <div className="relative group">
             <div className={`h-24 w-24 rounded-[2rem] ${badge.color} flex items-center justify-center border-4 border-slate-800 shadow-2xl overflow-hidden`}>
-               {profilePicturePreview ? (
+               {profilePictureFile || auth?.profilePicture ? (
                  <img 
-                  src={profilePicturePreview.startsWith('blob:') || profilePicturePreview.startsWith('http') ? profilePicturePreview : `${API_URL}${profilePicturePreview}`} 
+                  src={profilePictureFile ? URL.createObjectURL(profilePictureFile) : (auth.profilePicture.startsWith('http') ? auth.profilePicture : `${API_URL}${auth.profilePicture}`)} 
                   alt={auth?.name} 
                   className="h-full w-full object-cover" 
-                  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=No+Image"; }} />
+                  onError={(e) => { 
+                    e.target.style.display = 'none';
+                    e.target.parentNode.innerHTML = `<div class="h-full w-full flex items-center justify-center text-3xl font-black uppercase text-white">${auth?.name?.[0] || 'U'}</div>`;
+                  }} />
                ) : (
                  <badge.icon size={48} className={badge.badgeColor} />
                )}
@@ -161,7 +167,17 @@ const ProfilePage = () => {
                  {badge.label}
                </span>
                <div className="h-1 w-1 rounded-full bg-slate-700" />
-               <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Joined {(() => { const raw = auth?.createdAt; if (!raw) return 'Unknown'; const ms = raw?._seconds ? raw._seconds * 1000 : raw?.seconds ? raw.seconds * 1000 : typeof raw === 'string' || typeof raw === 'number' ? new Date(raw).getTime() : null; const d = ms ? new Date(ms) : null; return d && !isNaN(d) ? d.toLocaleDateString() : 'Unknown'; })()}</span>
+               <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Joined {(() => { 
+                 const raw = auth?.createdAt; 
+                 if (!raw) return 'Unknown'; 
+                 let date;
+                 if (raw?._seconds || raw?.seconds) {
+                   date = new Date((raw._seconds || raw.seconds) * 1000);
+                 } else {
+                   date = new Date(raw);
+                 }
+                 return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString();
+               })()}</span>
             </div>
           </div>
         </div>

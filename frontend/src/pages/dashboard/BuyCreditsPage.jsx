@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { formatLKR } from '../../utils/currency';
+import { formatLKR, getExchangeRate } from '../../utils/currency';
 import { toast } from 'react-hot-toast';
 import { formatDate } from '../../utils/date';
 
@@ -47,7 +47,11 @@ const BuyCreditsPage = () => {
       setTransactionHistory(txRes.data);
       setPendingRequests(reqRes.data);
     } catch (err) {
-      console.error(err);
+      console.error('Credits Data Load Error:', {
+        status: err.response?.status,
+        message: err.response?.data?.message || err.message
+      });
+      // Don't toast here to avoid spamming the user if they're just browsing
     }
   };
 

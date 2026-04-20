@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { formatLKR, getExchangeRate } from '../../utils/currency';
+import { formatLKR } from '../../utils/currency';
 import { toast } from 'react-hot-toast';
 import { formatDate } from '../../utils/date';
 
@@ -16,7 +16,7 @@ const BuyCreditsPage = () => {
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [exchangeRate, setExchangeRate] = useState(300);
+  const [exchangeRate] = useState(300);
   
   // Modal State
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -35,7 +35,6 @@ const BuyCreditsPage = () => {
 
   useEffect(() => {
     fetchData();
-    getExchangeRate().then(setExchangeRate);
   }, []);
 
   const fetchData = async () => {
@@ -109,9 +108,9 @@ const BuyCreditsPage = () => {
        <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-4">
           <div className="text-left space-y-4 max-w-xl">
             <h1 className="text-4xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Refill Your Wallet</h1>
-            <p className="text-slate-500 font-medium text-sm uppercase tracking-widest dark:text-slate-400">
-               $1 = 100 Credits. Spend them on exclusive books and services across Liyamu.
-            </p>
+             <p className="text-slate-500 font-medium text-sm uppercase tracking-widest dark:text-slate-400">
+                $1 = LKR 300 (100 Credits). Spend them on exclusive books and services across Liyamu.
+             </p>
           </div>
           
           <div className="shrink-0 rounded-[2rem] bg-brand-600 px-10 py-6 text-white shadow-2xl shadow-brand-600/20 flex items-center gap-6">
@@ -153,9 +152,6 @@ const BuyCreditsPage = () => {
             
             <div className="mt-8 flex flex-col">
               <p className="text-2xl font-bold text-slate-900 dark:text-white">${pkg.price}</p>
-              <p className="text-sm font-black text-brand-600 uppercase tracking-widest">
-                 ≈ {formatLKR(pkg.price, exchangeRate)}
-              </p>
             </div>
             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-8 mt-1">One-time payment</p>
             

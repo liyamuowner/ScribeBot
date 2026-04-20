@@ -1,6 +1,7 @@
 import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
 import { triggerNotification, notifyAdmins } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
+import { uploadBufferToCloudinary } from '../utils/cloudinaryHelper.js';
 
 export const buyCredits = async (req, res) => {
   const { amount, packageId, paymentId } = req.body;
@@ -69,7 +70,12 @@ export const submitCreditRequest = async (req, res) => {
   if (!req.file) throw new ApiError(400, 'Payment slip is required');
   if (!amount || !price) throw new ApiError(400, 'Invalid amount or price');
 
-  const slipUrl = req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`;
+  let slipUrl = req.file.path;
+  if (req.file.buffer) {
+      slipUrl = await uploadBufferToCloudinary(req.file.buffer, 'slips', 'image');
+  } else {
+      slipUrl = slipUrl && slipUrl.startsWith('http') ? slipUrl : `/uploads/${req.file.filename}`;
+  }
 
   const request = await createDoc('creditRequests', {
     userId: req.user.id, userName: req.user.name,

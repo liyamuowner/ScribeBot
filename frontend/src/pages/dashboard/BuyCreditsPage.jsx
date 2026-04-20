@@ -6,7 +6,9 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { getExchangeRate, formatLKR } from '../../utils/currency';
+import { formatLKR } from '../../utils/currency';
+import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const BuyCreditsPage = () => {
   const { auth, setAuth } = useAuth();
@@ -14,7 +16,7 @@ const BuyCreditsPage = () => {
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [exchangeRate, setExchangeRate] = useState(300);
+  const [exchangeRate] = useState(300);
   
   // Modal State
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -33,7 +35,6 @@ const BuyCreditsPage = () => {
 
   useEffect(() => {
     fetchData();
-    getExchangeRate().then(setExchangeRate);
   }, []);
 
   const fetchData = async () => {
@@ -45,7 +46,11 @@ const BuyCreditsPage = () => {
       setTransactionHistory(txRes.data);
       setPendingRequests(reqRes.data);
     } catch (err) {
-      console.error(err);
+      console.error('Credits Data Load Error:', {
+        status: err.response?.status,
+        message: err.response?.data?.message || err.message
+      });
+      // Don't toast here to avoid spamming the user if they're just browsing
     }
   };
 
@@ -84,7 +89,7 @@ const BuyCreditsPage = () => {
       }, 3000);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Upload failed');
+      toast.error(err.response?.data?.message || 'Upload failed');
     } finally {
       setLoading(false);
     }
@@ -103,9 +108,9 @@ const BuyCreditsPage = () => {
        <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-4">
           <div className="text-left space-y-4 max-w-xl">
             <h1 className="text-4xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Refill Your Wallet</h1>
-            <p className="text-slate-500 font-medium text-sm uppercase tracking-widest dark:text-slate-400">
-               $1 = 100 Credits. Spend them on exclusive books and services across Liyamu.
-            </p>
+             <p className="text-slate-500 font-medium text-sm uppercase tracking-widest dark:text-slate-400">
+                $1 = LKR 300 (100 Credits). Spend them on exclusive books and services across Liyamu.
+             </p>
           </div>
           
           <div className="shrink-0 rounded-[2rem] bg-brand-600 px-10 py-6 text-white shadow-2xl shadow-brand-600/20 flex items-center gap-6">
@@ -147,9 +152,6 @@ const BuyCreditsPage = () => {
             
             <div className="mt-8 flex flex-col">
               <p className="text-2xl font-bold text-slate-900 dark:text-white">${pkg.price}</p>
-              <p className="text-sm font-black text-brand-600 uppercase tracking-widest">
-                 ≈ {formatLKR(pkg.price, exchangeRate)}
-              </p>
             </div>
             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-8 mt-1">One-time payment</p>
             
@@ -207,14 +209,14 @@ const BuyCreditsPage = () => {
                </div>
                <div className="space-y-4">
                   {pendingRequests.map(req => (
-                    <div key={req._id} className="flex flex-col md:flex-row gap-4 md:items-center justify-between p-6 rounded-2xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                    <div key={req.id} className="flex flex-col md:flex-row gap-4 md:items-center justify-between p-6 rounded-2xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                        <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 dark:bg-slate-800">
-                             <img src={req.slipUrl} alt="" className="h-10 w-10 object-cover rounded-lg opacity-40 hover:opacity-100 transition-opacity cursor-zoom-in" />
+                             <img src={req.slipUrl} alt="" className="h-10 w-10 object-cover rounded-lg opacity-40 hover:opacity-100 transition-opacity cursor-zoom-in"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                           </div>
                           <div>
                              <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Purchase Instance: {req.amount} Credits</p>
-                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">${req.price} • {new Date(req.createdAt).toLocaleDateString()}</p>
+                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">${req.price} • {formatDate(req.createdAt)}</p>
                           </div>
                        </div>
                        
@@ -239,7 +241,7 @@ const BuyCreditsPage = () => {
              <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white mb-8">Completed Transactions</h3>
              <div className="space-y-4">
                 {transactionHistory.map(tx => (
-                  <div key={tx._id} className="flex items-center justify-between p-6 rounded-2xl bg-slate-50 border border-transparent hover:border-slate-100 transition-all dark:bg-slate-800/50 dark:hover:border-slate-700">
+                  <div key={tx.id} className="flex items-center justify-between p-6 rounded-2xl bg-slate-50 border border-transparent hover:border-slate-100 transition-all dark:bg-slate-800/50 dark:hover:border-slate-700">
                      <div className="flex items-center gap-4">
                         <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
                           tx.type === 'purchase' || tx.type === 'admin_add' || tx.type === 'refund' 
@@ -250,7 +252,7 @@ const BuyCreditsPage = () => {
                         </div>
                         <div>
                            <p className="text-xs font-black uppercase text-slate-900 dark:text-white">{tx.description}</p>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{formatDate(tx.createdAt)}</p>
                         </div>
                      </div>
                      <div className={`text-sm font-black ${
@@ -355,7 +357,7 @@ const BuyCreditsPage = () => {
                           : 'border-slate-200 group-hover:border-brand-300 group-hover:bg-slate-50 dark:border-slate-700'
                       }`}>
                         {previewUrl ? (
-                          <img src={previewUrl} className="h-32 w-48 object-cover rounded-2xl shadow-xl" alt="Preview" />
+                          <img src={previewUrl} className="h-32 w-48 object-cover rounded-2xl shadow-xl" alt="Preview"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                         ) : (
                           <>
                             <Upload className="text-slate-300 group-hover:text-brand-400 mb-2" size={32} />

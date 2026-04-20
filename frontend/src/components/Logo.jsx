@@ -6,7 +6,7 @@ const Logo = ({ className = "h-8 w-8 text-brand-600", showText = true }) => {
       <div className="relative group">
         <div className="absolute inset-0 bg-brand-600/20 rounded-xl blur-lg group-hover:blur-xl transition-all opacity-0 group-hover:opacity-100" />
         <div className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden">
-          <video src="/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-screen" />
+          <video src="https://res.cloudinary.com/dmoiunaru/video/upload/v1776676540/liyamu_assets/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-screen" />
         </div>
       </div>
       {showText && (

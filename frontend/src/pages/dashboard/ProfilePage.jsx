@@ -4,6 +4,7 @@ import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { getRoleBadge } from '../../utils/badges';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDate } from '../../utils/date';
 import { ShieldCheck, Mail, Phone, Facebook, Send, User, BookOpen, Clock, CheckCircle, AlertCircle, Bookmark, Trash2, Plus, Key, Lock } from 'lucide-react';
 
 const ProfilePage = () => {
@@ -23,7 +24,7 @@ const ProfilePage = () => {
   const [bookmarkedWorks, setBookmarkedWorks] = useState([]);
   const [message, setMessage] = useState('');
   const [profilePictureFile, setProfilePictureFile] = useState(null);
-  const [profilePicturePreview, setProfilePicturePreview] = useState(auth?.profilePicture || '');
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
   const [deletedWorks, setDeletedWorks] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -44,6 +45,13 @@ const ProfilePage = () => {
     api.get('/creative/my/deleted').then(res => setDeletedWorks(res.data));
   }, [isAuthor]);
 
+  // Sync profile picture preview when auth state updates
+  useEffect(() => {
+    if (auth?.profilePicture) {
+      setProfilePicturePreview(auth.profilePicture);
+    }
+  }, [auth?.profilePicture]);
+
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -52,14 +60,13 @@ const ProfilePage = () => {
         return;
       }
       setProfilePictureFile(file);
-      setProfilePicturePreview(URL.createObjectURL(file));
     }
   };
 
   const removeBookmark = async (id) => {
     try {
       await api.post(`/users/bookmarks/${id}`);
-      setBookmarkedWorks(prev => prev.filter(w => w._id !== id));
+      setBookmarkedWorks(prev => prev.filter(w => w.id !== id));
     } catch (err) {
       console.error(err);
     }
@@ -94,7 +101,7 @@ const ProfilePage = () => {
   const restoreWork = async (id) => {
     try {
       await api.post(`/creative/restore/${id}`);
-      setDeletedWorks(prev => prev.filter(w => w._id !== id));
+      setDeletedWorks(prev => prev.filter(w => w.id !== id));
       setMessage('Work restored successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
@@ -136,12 +143,15 @@ const ProfilePage = () => {
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 relative z-10 w-full sm:w-auto">
           <div className="relative group">
             <div className={`h-24 w-24 rounded-[2rem] ${badge.color} flex items-center justify-center border-4 border-slate-800 shadow-2xl overflow-hidden`}>
-               {profilePicturePreview ? (
+               {profilePictureFile || auth?.profilePicture ? (
                  <img 
-                  src={profilePicturePreview.startsWith('blob:') ? profilePicturePreview : `${API_URL}${profilePicturePreview}`} 
+                  src={profilePictureFile ? URL.createObjectURL(profilePictureFile) : (auth.profilePicture.startsWith('http') ? auth.profilePicture : `${API_URL}${auth.profilePicture}`)} 
                   alt={auth?.name} 
                   className="h-full w-full object-cover" 
-                 />
+                  onError={(e) => { 
+                    e.target.style.display = 'none';
+                    e.target.parentNode.innerHTML = `<div class="h-full w-full flex items-center justify-center text-3xl font-black uppercase text-white">${auth?.name?.[0] || 'U'}</div>`;
+                  }} />
                ) : (
                  <badge.icon size={48} className={badge.badgeColor} />
                )}
@@ -161,7 +171,9 @@ const ProfilePage = () => {
                  {badge.label}
                </span>
                <div className="h-1 w-1 rounded-full bg-slate-700" />
-               <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Joined {new Date(auth?.createdAt).toLocaleDateString()}</span>
+               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">
+                 MEMBER SINCE {formatDate(auth?.createdAt)}
+               </p>
             </div>
           </div>
         </div>
@@ -267,10 +279,10 @@ const ProfilePage = () => {
 
                  <div className="space-y-4">
                     {myBooks.map((book) => (
-                       <div key={book._id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-6 border border-transparent hover:border-slate-100 transition-all group dark:bg-slate-800/50 dark:hover:border-slate-700">
+                       <div key={book.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-6 border border-transparent hover:border-slate-100 transition-all group dark:bg-slate-800/50 dark:hover:border-slate-700">
                           <div className="flex items-center gap-4">
                              <div className="h-12 w-10 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-800">
-                                {book.coverUrl && <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" />}
+                                {book.coverUrl && <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt=""  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />}
                              </div>
                              <div>
                                 <h4 className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{book.title}</h4>
@@ -315,11 +327,11 @@ const ProfilePage = () => {
 
                <div className="space-y-4">
                   {bookmarkedWorks.map((work) => (
-                     <Link to={`/dashboard/creative/${work._id}`} key={work._id} className="flex flex-col sm:flex-row items-center sm:justify-between gap-4 rounded-2xl bg-slate-50 p-6 border border-transparent hover:border-slate-100 transition-all group dark:bg-slate-800/50 dark:hover:border-slate-700">
+                     <Link to={`/dashboard/creative/${work.id}`} key={work.id} className="flex flex-col sm:flex-row items-center sm:justify-between gap-4 rounded-2xl bg-slate-50 p-6 border border-transparent hover:border-slate-100 transition-all group dark:bg-slate-800/50 dark:hover:border-slate-700">
                         <div className="flex items-center gap-4 w-full sm:w-auto">
                            <div className="h-10 w-10 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
                               {work.author?.profilePicture ? (
-                                <img src={work.author.profilePicture.startsWith('http') ? work.author.profilePicture : `${API_URL}${work.author.profilePicture}`} className="h-full w-full object-cover" alt="" />
+                                <img src={work.author.profilePicture.startsWith('http') ? work.author.profilePicture : `${API_URL}${work.author.profilePicture}`} className="h-full w-full object-cover" alt=""  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                               ) : (
                                 <div className="h-full w-full flex items-center justify-center font-black text-slate-400">{work.author?.name?.charAt(0)}</div>
                               )}
@@ -334,7 +346,7 @@ const ProfilePage = () => {
                              onClick={(e) => {
                                e.preventDefault();
                                e.stopPropagation();
-                               removeBookmark(work._id);
+                               removeBookmark(work.id);
                              }}
                              className="rounded-xl bg-white px-3 py-1.5 shadow-sm text-slate-400 hover:text-rose-500 transition-colors dark:bg-slate-800/80"
                            >
@@ -471,14 +483,14 @@ const ProfilePage = () => {
 
            <div className="grid gap-6 md:grid-cols-2">
               {deletedWorks.map((work) => (
-                 <div key={work._id} className="flex flex-col rounded-2xl bg-slate-50/50 p-6 border border-slate-100 dark:bg-slate-800/30 dark:border-slate-800">
+                 <div key={work.id} className="flex flex-col rounded-2xl bg-slate-50/50 p-6 border border-slate-100 dark:bg-slate-800/30 dark:border-slate-800">
                     <div className="flex justify-between items-start mb-4">
                        <h4 className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{work.title}</h4>
-                       <span className="text-[9px] font-bold text-slate-400">Deleted on {new Date(work.deletedAt).toLocaleDateString()}</span>
+                       <span className="text-[9px] font-bold text-slate-400">Deleted on {formatDate(work.deletedAt)}</span>
                     </div>
                     <div className="flex items-center gap-3 mt-auto">
                        <button 
-                         onClick={() => restoreWork(work._id)}
+                         onClick={() => restoreWork(work.id)}
                          className="flex-1 rounded-xl bg-white px-4 py-2.5 text-[9px] font-black uppercase tracking-widest text-emerald-600 border border-emerald-100 hover:bg-emerald-50 transition-all dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400"
                        >
                           Restore

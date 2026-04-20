@@ -1,4 +1,4 @@
-import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
+import { col, getDocById, createDoc, updateDoc, snapToArray, getBatch, FieldValue } from '../config/firestore.js';
 import { triggerNotification, notifyAdmins } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
 
@@ -17,7 +17,7 @@ export const markRead = async (req, res) => {
 
 export const markAllRead = async (req, res) => {
   const snap = await col.notifications().where('userId', '==', req.user.id).where('isRead', '==', false).get();
-  const batch = col.notifications().firestore.batch();
+  const batch = getBatch();
   snap.docs.forEach(d => batch.update(d.ref, { isRead: true, updatedAt: FieldValue.serverTimestamp() }));
   await batch.commit();
   res.json({ message: 'All notifications marked as read' });

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 
 const api = axios.create({
@@ -8,8 +9,8 @@ const api = axios.create({
 // Helper to wait for Firebase Auth to initialize
 const waitForAuth = () => {
   return new Promise((resolve) => {
-    if (auth.currentUser) return resolve(auth.currentUser);
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    if (auth.currentUser !== null) return resolve(auth.currentUser);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       unsubscribe();
       resolve(user);
     });
@@ -18,6 +19,7 @@ const waitForAuth = () => {
 
 api.interceptors.request.use(async (config) => {
   // Wait for Firebase to be ready if it's not yet determined
+main
   if (auth) {
     await auth.authStateReady();
     
@@ -29,6 +31,17 @@ api.interceptors.request.use(async (config) => {
       } catch (err) {
         console.error('Failed to get Firebase ID token', err);
       }
+=======
+  await waitForAuth();
+  
+  const user = auth.currentUser;
+  if (user) {
+    try {
+      const token = await user.getIdToken();
+      config.headers.Authorization = `Bearer ${token}`;
+    } catch (err) {
+      console.error('Failed to get Firebase ID token', err);
+main
     }
   }
   return config;

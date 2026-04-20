@@ -18,6 +18,7 @@ import {
   Trash2
 } from 'lucide-react';
 import api from '../../api/client';
+import { formatDate } from '../../utils/date';
 
 const AdminPayoutsPage = () => {
   const [requests, setRequests] = useState([]);
@@ -60,7 +61,7 @@ const AdminPayoutsPage = () => {
       const { data } = await api.put(`/withdrawals/admin/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setRequests(prev => prev.map(r => r._id === id ? data : r));
+      setRequests(prev => prev.map(r => r.id === id ? data : r));
       setSelectedReq(null);
       setSlipFile(null);
       setRejectionReason('');
@@ -76,10 +77,10 @@ const AdminPayoutsPage = () => {
     const deletingToast = toast.loading('Deleting payout record...');
     try {
       await api.delete(`/withdrawals/admin/${id}`);
-      setRequests(prev => prev.map(r => r._id === id ? { ...r, isDeleting: true } : r));
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, isDeleting: true } : r));
       // Use timeout for animation or just filter
       setTimeout(() => {
-        setRequests(prev => prev.filter(r => r._id !== id));
+        setRequests(prev => prev.filter(r => r.id !== id));
       }, 300);
       setConfirmDelete({ show: false, id: null });
       toast.success('Payout record deleted permanently', { id: deletingToast });
@@ -140,14 +141,14 @@ const AdminPayoutsPage = () => {
             const Status = statusIcons[req.status];
             return (
                <div 
-                  key={req._id}
+                  key={req.id}
                   className="group relative overflow-hidden rounded-3xl bg-white p-6 border border-slate-50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 dark:bg-slate-900 dark:border-slate-800"
                >
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                      <div className="flex items-center gap-5 flex-1">
                         <div className="h-14 w-14 overflow-hidden rounded-[1.5rem] bg-slate-100 flex items-center justify-center text-slate-400 dark:bg-slate-800 border border-slate-50 dark:border-white/5">
                            {req.user?.profilePicture ? (
-                             <img src={req.user.profilePicture.startsWith('http') ? req.user.profilePicture : `${API_URL}${req.user.profilePicture}`} alt="" className="h-full w-full object-cover" />
+                             <img src={req.user.profilePicture.startsWith('http') ? req.user.profilePicture : `${API_URL}${req.user.profilePicture}`} alt="" className="h-full w-full object-cover"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                            ) : (
                              <span className="text-lg font-black uppercase text-slate-300 dark:text-slate-600">{req.user?.name?.charAt(0) || '?'}</span>
                            )}
@@ -156,7 +157,7 @@ const AdminPayoutsPage = () => {
                            <div className="flex items-center gap-3">
                               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase truncate max-w-[150px]">{req.user?.name || 'Unknown Author'}</h3>
                               <span className="rounded-lg bg-slate-50 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-400 dark:bg-slate-800">
-                                 {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A'}
+                                 {formatDate(req.createdAt)}
                               </span>
                            </div>
                            <div className="mt-2 flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-slate-400">
@@ -175,7 +176,7 @@ const AdminPayoutsPage = () => {
                         </div>
                         
                         <button 
-                          onClick={() => setConfirmDelete({ show: true, id: req._id })}
+                          onClick={() => setConfirmDelete({ show: true, id: req.id })}
                           className="h-12 w-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-400 hover:bg-rose-500 hover:text-white transition-all dark:bg-rose-500/10"
                           title="Delete Record"
                         >
@@ -218,7 +219,7 @@ const AdminPayoutsPage = () => {
                 <div className="flex items-center justify-between mb-8">
                    <div>
                       <h2 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Process Payout</h2>
-                      <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase mt-1">Reviewing request #{selectedReq._id?.slice(-6)}</p>
+                      <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase mt-1">Reviewing request #{selectedReq.id?.slice(-6)}</p>
                    </div>
                    <button onClick={() => setSelectedReq(null)} className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 dark:bg-slate-800">
                       <X size={20} />
@@ -296,7 +297,7 @@ const AdminPayoutsPage = () => {
                             </label>
                             <button 
                               disabled={submitting}
-                              onClick={() => handleProcess(selectedReq._id, 'completed')}
+                              onClick={() => handleProcess(selectedReq.id, 'completed')}
                               className="w-full rounded-2xl bg-slate-900 py-4 text-[10px] font-black uppercase tracking-widest text-white hover:bg-emerald-600 transition-all shadow-xl dark:bg-brand-600"
                             >
                                Mark as Transfered
@@ -313,7 +314,7 @@ const AdminPayoutsPage = () => {
                             />
                             <button 
                               disabled={submitting}
-                              onClick={() => handleProcess(selectedReq._id, 'rejected')}
+                              onClick={() => handleProcess(selectedReq.id, 'rejected')}
                               className="w-full rounded-2xl bg-rose-50 py-4 text-[10px] font-black uppercase tracking-widest text-rose-600 hover:bg-rose-600 hover:text-white transition-all dark:bg-rose-500/10 dark:hover:bg-rose-600"
                             >
                                Reject Payout
@@ -377,7 +378,7 @@ const AdminPayoutsPage = () => {
               <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Delete Record?</h3>
               <p className="mt-2 text-xs font-bold uppercase tracking-widest text-slate-400">
                 This action is permanent and cannot be undone. 
-                {requests.find(r => r._id === confirmDelete.id)?.status === 'pending' && (
+                {requests.find(r => r.id === confirmDelete.id)?.status === 'pending' && (
                   <span className="block mt-2 text-rose-500 text-[10px]">Warning: Pending requests will not be refunded automatically.</span>
                 )}
               </p>

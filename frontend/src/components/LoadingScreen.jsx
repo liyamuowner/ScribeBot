@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const messages = [
@@ -21,11 +21,20 @@ const LoadingScreen = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
   const [messageIndex, setMessageIndex] = useState(0);
 
+  const completeRef = useRef(false);
+
   useEffect(() => {
     // Session-based check
     const hasVisited = sessionStorage.getItem('liyamu_session_boot');
+    const finishLoading = () => {
+      if (!completeRef.current) {
+        completeRef.current = true;
+        onComplete();
+      }
+    };
+
     if (hasVisited) {
-      onComplete();
+      finishLoading();
       return;
     }
     sessionStorage.setItem('liyamu_session_boot', 'true');
@@ -39,14 +48,25 @@ const LoadingScreen = ({ onComplete }) => {
         const next = prev + increment;
         if (next >= 100) {
           clearInterval(timer);
-          setTimeout(onComplete, 500);
+          setTimeout(() => {
+            setProgress(100);
+            finishLoading();
+          }, 500);
           return 100;
         }
         return next;
       });
     }, intervalTime);
 
-    return () => clearInterval(timer);
+    const fallbackTimer = setTimeout(() => {
+      setProgress(100);
+      finishLoading();
+    }, 6000);
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(fallbackTimer);
+    };
   }, [onComplete]);
 
   useEffect(() => {
@@ -90,7 +110,7 @@ const LoadingScreen = ({ onComplete }) => {
         >
           <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-[2.5rem] overflow-hidden bg-brand-600/20 shadow-[0_20px_50px_rgba(79,70,229,0.4)] relative">
              <div className="absolute inset-0 rounded-[2.5rem] bg-white animate-pulse opacity-5 z-0" />
-             <video src="/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-screen z-10" />
+             <video src="https://res.cloudinary.com/dmoiunaru/video/upload/v1776676540/liyamu_assets/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-screen z-10" />
           </div>
           <h1 className="text-3xl font-black tracking-widest text-white uppercase italic">Liyamu</h1>
           <p className="mt-2 text-slate-500 uppercase tracking-[0.4em] text-[8px] font-black">Digital Sovereignty / Library Hub</p>

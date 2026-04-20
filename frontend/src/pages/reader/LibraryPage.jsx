@@ -17,6 +17,7 @@ import {
 import api from '../../api/client';
 import { ProBadge } from '../../utils/badges';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 const LibraryPage = () => {
   const { auth, setAuth } = useAuth();
@@ -47,7 +48,7 @@ const LibraryPage = () => {
     const shareData = {
       title: book.title,
       text: `Check out this book "${book.title}" on Liyamu!`,
-      url: `${window.location.origin}/dashboard/library/${book._id}`,
+      url: `${window.location.origin}/dashboard/library/${book.id}`,
     };
 
     if (navigator.share) {
@@ -58,7 +59,7 @@ const LibraryPage = () => {
       }
     } else {
       await navigator.clipboard.writeText(shareData.url);
-      setSharedId(book._id);
+      setSharedId(book.id);
       setTimeout(() => setSharedId(null), 2000);
     }
   };
@@ -68,23 +69,23 @@ const LibraryPage = () => {
     if (!book) return;
     
     if (auth.creditBalance < book.price) {
-      alert(`Insufficient credits. You need ${book.price} credits to purchase this book.`);
+      toast.error(`Insufficient credits. You need ${book.price} credits.`);
       return;
     }
 
     setPurchaseModal(prev => ({ ...prev, processing: true }));
     try {
-      const { data } = await api.post(`/books/${book._id}/purchase`);
+      const { data } = await api.post(`/books/${book.id}/purchase`);
       setAuth({ 
         ...auth, 
         creditBalance: data.balance,
-        purchasedBooks: [...(auth.purchasedBooks || []), book._id] 
+        purchasedBooks: [...(auth.purchasedBooks || []), book.id] 
       });
       setPurchaseModal({ show: false, book: null, processing: false });
-      alert('Purchase successful! The book is now in your library.');
+      toast.success('Purchase successful! The book is now in your library.');
     } catch (err) {
        console.error(err);
-       alert(err.response?.data?.message || 'Purchase failed.');
+       toast.error(err.response?.data?.message || 'Purchase failed.');
     } finally {
        setPurchaseModal(prev => ({ ...prev, processing: false }));
     }
@@ -156,7 +157,7 @@ const LibraryPage = () => {
         >
           {books.map((book) => (
             <motion.div 
-              key={book._id} 
+              key={book.id} 
               variants={item}
               className="group relative flex flex-col rounded-3xl md:rounded-[2rem] bg-white p-3 md:p-4 shadow-sm border border-slate-100 dark:bg-slate-900 dark:border-slate-800 hover:shadow-2xl transition-all duration-300"
             >
@@ -165,7 +166,7 @@ const LibraryPage = () => {
                   src={book.coverUrl ? (book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`) : 'https://via.placeholder.com/300x400?text=No+Cover'} 
                   alt={book.title}
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
+                 onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 md:p-6">
                    <div className="flex gap-2">
                      <span className="flex items-center gap-1 text-[9px] md:text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">
@@ -186,7 +187,7 @@ const LibraryPage = () => {
                   onClick={() => handleShare(book)}
                   className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white hover:text-slate-900 transition-all"
                 >
-                  {sharedId === book._id ? <Check size={14} /> : <Share2 size={14} />}
+                  {sharedId === book.id ? <Check size={14} /> : <Share2 size={14} />}
                 </button>
               </div>
 
@@ -203,12 +204,12 @@ const LibraryPage = () => {
                 
                 <div className="flex items-center gap-2 pt-2">
                    <Link 
-                    to={`/dashboard/library/${book._id}`} 
+                    to={`/dashboard/library/${book.id}`} 
                     className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 md:py-4 text-[9px] md:text-[10px] uppercase tracking-widest font-black text-white hover:bg-brand-600 transition-all dark:bg-slate-800"
                   >
                     <BookOpen size={14} /> Read Now
                   </Link>
-                  {!book.isFree && !(auth.purchasedBooks || []).includes(book._id) && (
+                  {!book.isFree && !(auth.purchasedBooks || []).includes(book.id) && (
                     <button 
                       onClick={() => setPurchaseModal({ show: true, book, processing: false })} 
                       className="flex h-[40px] w-[40px] md:h-[48px] md:w-[48px] items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-slate-100 hover:border-emerald-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 shrink-0"

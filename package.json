@@ -1,0 +1,10 @@
+{
+  "name": "liyamu-root",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "serverless-http": "^4.0.0"
+  }
+}

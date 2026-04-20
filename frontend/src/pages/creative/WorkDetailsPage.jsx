@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../utils/date';
 
 const WorkDetailsPage = () => {
   const { id } = useParams();
@@ -32,8 +33,8 @@ const WorkDetailsPage = () => {
       const { data } = await api.get(`/creative/${id}`);
       setWork({
         ...data,
-        isLiked: auth ? data.likes?.includes(auth._id) : false,
-        isBookmarked: auth ? auth.bookmarkedWorks?.includes(data._id) : false
+        isLiked: auth ? (data.likes || []).includes(auth.id) : false,
+        isBookmarked: auth ? (auth.bookmarkedWorks || []).includes(data.id) : false
       });
     } catch (err) {
       console.error(err);
@@ -121,7 +122,7 @@ const WorkDetailsPage = () => {
                 </span>
                 <div className="flex items-center gap-2 text-slate-400">
                    <Clock size={12} />
-                   <span className="text-[9px] font-black uppercase tracking-widest">{new Date(work.createdAt).toLocaleDateString()}</span>
+                   <span className="text-[9px] font-black uppercase tracking-widest">{formatDate(work.createdAt)}</span>
                 </div>
               </div>
 
@@ -205,7 +206,7 @@ const WorkDetailsPage = () => {
               <div className="space-y-4">
                  {work.comments?.map((comment, i) => (
                    <motion.div 
-                     key={comment._id}
+                     key={comment.id}
                      initial={{ opacity: 0, x: -10 }}
                      animate={{ opacity: 1, x: 0 }}
                      transition={{ delay: i * 0.05 }}
@@ -213,7 +214,7 @@ const WorkDetailsPage = () => {
                    >
                       <div className="h-10 w-10 rounded-xl overflow-hidden border border-white/10 shrink-0">
                          {comment.user?.profilePicture ? (
-                           <img src={comment.user.profilePicture.startsWith('http') ? comment.user.profilePicture : `${API_URL}${comment.user.profilePicture}`} className="h-full w-full object-cover" />
+                           <img src={comment.user.profilePicture.startsWith('http') ? comment.user.profilePicture : `${API_URL}${comment.user.profilePicture}`} className="h-full w-full object-cover"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                          ) : (
                            <div className="h-full w-full bg-slate-100 flex items-center justify-center font-black dark:bg-slate-800">{comment.user?.name?.charAt(0)}</div>
                          )}
@@ -221,7 +222,7 @@ const WorkDetailsPage = () => {
                       <div className="flex-1">
                          <div className="flex items-center justify-between mb-1">
                             <h4 className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{comment.user?.name}</h4>
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{formatDate(comment.createdAt)}</span>
                          </div>
                          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">{comment.text}</p>
                       </div>
@@ -236,14 +237,14 @@ const WorkDetailsPage = () => {
            <div className="glass-theme rounded-[2.5rem] p-8 border border-white/5 shadow-xl text-center">
               <div className="mx-auto h-20 w-20 rounded-[1.5rem] overflow-hidden border-2 border-brand-500 p-1 mb-4">
                  <div className="h-full w-full rounded-xl overflow-hidden">
-                    {work.author?.profilePicture ? (
-                      <img src={work.author.profilePicture.startsWith('http') ? work.author.profilePicture : `${API_URL}${work.author.profilePicture}`} alt="" className="h-full w-full object-cover" />
+                    {work.authorPicture ? (
+                      <img src={work.authorPicture.startsWith('http') ? work.authorPicture : `${API_URL}${work.authorPicture}`} alt="" className="h-full w-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                     ) : (
-                      <div className="h-full w-full bg-emerald-50 flex items-center justify-center font-black text-emerald-400">{work.author?.name?.charAt(0)}</div>
+                      <div className="h-full w-full bg-emerald-50 flex items-center justify-center font-black text-emerald-400">{work.authorName?.charAt(0)}</div>
                     )}
                  </div>
               </div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1">{work.author?.name}</h3>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1">{work.authorName}</h3>
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Master Author</p>
               
               <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-100 dark:border-white/5 mb-6">
@@ -258,7 +259,7 @@ const WorkDetailsPage = () => {
               </div>
 
               <Link 
-                to={`/dashboard/authors/${work.author?._id}`}
+                to={`/dashboard/authors/${work.authorId}`}
                 className="block w-full py-3 rounded-xl bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 transition-all"
               >
                 View Profile

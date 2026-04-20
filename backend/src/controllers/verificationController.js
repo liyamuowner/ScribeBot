@@ -1,10 +1,12 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
 import { notifyAdmins, triggerNotification } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
 import { v2 as cloudinary } from 'cloudinary';
+import { uploadBufferToCloudinary } from '../utils/cloudinaryHelper.js';
 
 export const submitVerification = async (req, res) => {
   const { name, idNumber, contactNumber } = req.body;
@@ -15,9 +17,14 @@ export const submitVerification = async (req, res) => {
     .where('status', '==', 'pending').limit(1).get();
   if (!existing.empty) throw new ApiError(400, 'Pending request already exists');
 
-  const documentUrl = req.file
-    ? (req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`)
-    : req.body.documentUrl;
+  let documentUrl = req.body.documentUrl;
+  if (req.file) {
+      if (req.file.buffer) {
+          documentUrl = await uploadBufferToCloudinary(req.file.buffer, 'verifications', 'auto');
+      } else {
+          documentUrl = req.file.path && req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`;
+      }
+  }
   if (!documentUrl) throw new ApiError(400, 'Verification document is required');
 
   const request = await createDoc('verificationRequests', {
@@ -73,9 +80,10 @@ export const decideVerification = async (req, res) => {
       type: 'verification',
     });
 
-    // PDF Certificate
-    const outputDir = path.resolve('uploads');
+    // PDF Certificate - Using os.tmpdir() for serverless compatibility
+    const outputDir = process.env.NODE_ENV === 'production' ? os.tmpdir() : path.resolve('uploads');
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+    
     const pdfPath = path.join(outputDir, `verification-${request.authorId}.pdf`);
     const doc = new PDFDocument();
     const stream = fs.createWriteStream(pdfPath);

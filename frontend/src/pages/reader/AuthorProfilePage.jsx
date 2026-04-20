@@ -26,7 +26,8 @@ import {
 import api from '../../api/client';
 import { getRoleBadge } from '../../utils/badges';
 import { useAuth } from '../../context/AuthContext';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const AuthorProfilePage = () => {
   const { id } = useParams();
@@ -42,15 +43,25 @@ const AuthorProfilePage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Primary data fetch
       const { data } = await api.get(`/users/${id}`);
       setAuthor(data);
       
+      // Secondary auth check (non-blocking)
       if (auth) {
-        const meRes = await api.get('/auth/me');
-        setFollowingIds(meRes.data.following || []);
+        try {
+          const meRes = await api.get('/auth/me');
+          setFollowingIds(meRes.data.following || []);
+        } catch (meErr) {
+          console.warn('Session check failed, following status may be unavailable:', meErr.message);
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Author Profile Load Error:', {
+        id,
+        status: err.response?.status,
+        message: err.response?.data?.message || err.message
+      });
       toast.error('Failed to load profile');
       navigate('/dashboard/authors');
     } finally {
@@ -64,19 +75,19 @@ const AuthorProfilePage = () => {
 
   const handleFollow = async () => {
     if (!auth) return toast.error('Please login to follow authors');
-    const isFollowing = followingIds.includes(author._id);
+    const isFollowing = followingIds.includes(author.id);
     
     setFollowingIds(prev => isFollowing 
-      ? prev.filter(fid => fid !== author._id) 
-      : [...prev, author._id]
+      ? prev.filter(fid => fid !== author.id) 
+      : [...prev, author.id]
     );
 
     try {
-      const { data } = await api.post(`/users/follow/${author._id}`);
+      const { data } = await api.post(`/users/follow/${author.id}`);
       setAuthor(prev => ({ ...prev, followersCount: data.followersCount }));
       toast.success(isFollowing ? `Unfollowed ${author.name}` : `Following ${author.name}`);
     } catch (err) {
-      setFollowingIds(prev => isFollowing ? [...prev, author._id] : prev.filter(fid => fid !== author._id));
+      setFollowingIds(prev => isFollowing ? [...prev, author.id] : prev.filter(fid => fid !== author.id));
       toast.error('Connection error');
     }
   };
@@ -91,8 +102,8 @@ const AuthorProfilePage = () => {
   if (!author) return null;
 
   const badge = getRoleBadge(author.role);
-  const isFollowing = followingIds.includes(author._id);
-  const isMe = auth?._id === author._id;
+  const isFollowing = followingIds.includes(author.id);
+  const isMe = auth?.id === author.id;
 
   const container = {
     hidden: { opacity: 0 },
@@ -129,7 +140,7 @@ const AuthorProfilePage = () => {
            <div className="relative group">
               <div className={`h-40 w-40 md:h-52 md:w-52 rounded-[3.5rem] border-8 border-white dark:border-slate-900 ${badge.color} flex items-center justify-center shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] group-hover:scale-[1.02] transition-transform duration-500 overflow-hidden`}>
                  {author.profilePicture ? (
-                   <img src={author.profilePicture.startsWith('http') ? author.profilePicture : `${API_URL}${author.profilePicture}`} alt="" className="h-full w-full object-cover" />
+                   <img src={author.profilePicture.startsWith('http') ? author.profilePicture : `${API_URL}${author.profilePicture}`} alt="" className="h-full w-full object-cover"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                  ) : (
                    <badge.icon size={80} className={badge.badgeColor} />
                  )}
@@ -151,7 +162,7 @@ const AuthorProfilePage = () => {
                  </span>
                  <div className="flex items-center gap-1.5 text-slate-400">
                     <Clock size={14} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Joined {new Date(author.createdAt).getFullYear()}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Joined {formatDate(author.createdAt)}</span>
                  </div>
               </div>
 
@@ -234,11 +245,11 @@ const AuthorProfilePage = () => {
                 className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
               >
                  {author.books?.length > 0 ? author.books.map((book) => (
-                   <motion.div key={book._id} variants={item} className="group relative overflow-hidden rounded-[2.5rem] glass-theme border border-white/5 p-6 hover:shadow-2xl transition-all">
+                   <motion.div key={book.id} variants={item} className="group relative overflow-hidden rounded-[2.5rem] glass-theme border border-white/5 p-6 hover:shadow-2xl transition-all">
                       <div className="flex gap-6">
                          <div className="h-40 w-28 shrink-0 overflow-hidden rounded-2xl shadow-xl group-hover:scale-105 transition-transform duration-500">
                             {book.coverUrl ? (
-                              <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" />
+                              <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt=""  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                             ) : (
                               <div className="h-full w-full bg-slate-100 flex items-center justify-center text-slate-300 dark:bg-slate-800"><BookOpen size={30} /></div>
                             )}
@@ -252,7 +263,7 @@ const AuthorProfilePage = () => {
                                </div>
                             </div>
                             <Link 
-                              to={`/dashboard/library/${book._id}`}
+                              to={`/dashboard/library/${book.id}`}
                               className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-brand-600 hover:text-brand-500"
                             >
                                Read Now <ChevronLeft size={14} className="rotate-180" />
@@ -275,16 +286,16 @@ const AuthorProfilePage = () => {
                 className="grid gap-6 md:grid-cols-2"
               >
                  {author.creativeWorks?.length > 0 ? author.creativeWorks.map((work) => (
-                   <motion.div key={work._id} variants={item} className="group rounded-[2rem] glass-theme p-8 border border-white/5 hover:shadow-2xl transition-all">
+                   <motion.div key={work.id} variants={item} className="group rounded-[2rem] glass-theme p-8 border border-white/5 hover:shadow-2xl transition-all">
                       <div className="flex items-center justify-between mb-4">
                          <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest dark:bg-emerald-500/10 dark:text-emerald-400">
                             {work.category}
                          </span>
-                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12} /> {new Date(work.createdAt).toLocaleDateString()}</span>
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12} /> {formatDate(work.createdAt)}</span>
                       </div>
                       <h4 className="text-xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-tight">{work.title}</h4>
                       <Link 
-                        to={`/dashboard/creative/${work._id}`}
+                        to={`/dashboard/creative/${work.id}`}
                         className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-brand-600"
                       >
                          Read Full Piece <ExternalLink size={12} />

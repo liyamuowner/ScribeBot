@@ -1,6 +1,7 @@
 import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
 import { triggerNotification } from '../utils/notificationHelper.js';
 import { adminAuth } from '../config/firebase.js';
+import { uploadBufferToCloudinary } from '../utils/cloudinaryHelper.js';
 
 export const updateProfile = async (req, res) => {
   const { name, email, phone, bio, theme } = req.body;
@@ -17,8 +18,18 @@ export const updateProfile = async (req, res) => {
   if (theme) updates['settings.theme'] = theme;
 
   if (req.file) {
-    updates.profilePicture = req.file.path.startsWith('http')
-      ? req.file.path : `/uploads/${req.file.filename}`;
+    let fileUrl = req.file.path;
+    if (req.file.buffer) {
+      fileUrl = await uploadBufferToCloudinary(req.file.buffer, 'profiles', 'image');
+    }
+    
+    if (fileUrl && fileUrl.startsWith('http')) {
+      updates.profilePicture = fileUrl;
+    } else if (req.file.filename) {
+      // Only fallback to local uploads if not in a serverless environment
+      // In serverless, req.file.path might be a temporary location
+      updates.profilePicture = `/uploads/${req.file.filename}`;
+    }
   }
 
   if (socialLinks) {
@@ -163,8 +174,8 @@ export const getAuthorProfile = async (req, res) => {
   if (!author) return res.status(404).json({ message: 'Author not found' });
 
   const [booksSnap, creativeSnap] = await Promise.all([
-    col.books().where('authorId', '==', id).where('status', '==', 'approved').orderBy('createdAt', 'desc').get(),
-    col.creativeWorks().where('authorId', '==', id).where('status', '==', 'approved').orderBy('createdAt', 'desc').limit(10).get(),
+    col.books().where('authorId', '==', id).where('status', '==', 'approved').get(),
+    col.creativeWorks().where('authorId', '==', id).where('status', '==', 'approved').limit(20).get(),
   ]);
 
   res.json({ ...author, books: snapToArray(booksSnap), creativeWorks: snapToArray(creativeSnap) });

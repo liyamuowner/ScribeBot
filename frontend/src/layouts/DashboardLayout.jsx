@@ -108,7 +108,7 @@ const DashboardLayout = () => {
       <div className="flex h-20 items-center justify-between border-b border-slate-100 px-8 dark:border-slate-800">
         <Link to="/" className="flex items-center gap-3" onClick={onClose}>
            <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.25)] border border-brand-500/20">
-             <video src="/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-screen" />
+             <video src="https://res.cloudinary.com/dmoiunaru/video/upload/v1776676540/liyamu_assets/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-screen" />
            </div>
            <span className="text-xl font-black tracking-widest text-slate-900 uppercase dark:text-white">Liyamu</span>
         </Link>
@@ -161,7 +161,7 @@ const DashboardLayout = () => {
         <div className="mb-6 flex items-center gap-3 rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
           <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold uppercase dark:bg-slate-800 dark:text-white overflow-hidden border border-white/50 shadow-sm">
              {auth?.profilePicture ? (
-               <img src={auth.profilePicture.startsWith('http') ? auth.profilePicture : `${API_URL}${auth.profilePicture}`} alt="" className="h-full w-full object-cover" />
+               <img src={auth.profilePicture.startsWith('http') ? auth.profilePicture : `${API_URL}${auth.profilePicture}`} alt="" className="h-full w-full object-cover"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
              ) : (
                auth?.name?.[0] || 'U'
              )}

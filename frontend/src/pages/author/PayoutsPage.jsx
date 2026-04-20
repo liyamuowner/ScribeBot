@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Coins, 
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../utils/date';
 
 const PayoutsPage = () => {
   const { auth, setAuth } = useAuth();
@@ -228,7 +229,7 @@ const PayoutsPage = () => {
                  ) : requests.map((req) => {
                     const status = statusMap[req.status];
                     return (
-                       <div key={req._id} className="group rounded-3xl bg-slate-50 p-6 border border-transparent hover:border-slate-100 transition-all dark:bg-slate-800/50 dark:hover:border-slate-700">
+                       <div key={req.id} className="group rounded-3xl bg-slate-50 p-6 border border-transparent hover:border-slate-100 transition-all dark:bg-slate-800/50 dark:hover:border-slate-700">
                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                              <div className="flex items-center gap-4">
                                 <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${status.color}`}>
@@ -237,7 +238,7 @@ const PayoutsPage = () => {
                                 <div>
                                    <div className="flex items-center gap-2">
                                       <h4 className="text-sm font-black text-slate-900 dark:text-white">{req.amount} Credits</h4>
-                                      <span className="text-[10px] text-slate-400 font-medium">• {new Date(req.createdAt).toLocaleDateString()}</span>
+                                      <span className="text-[10px] text-slate-400 font-medium">• {formatDate(req.createdAt)}</span>
                                    </div>
                                    <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${status.color.split(' ')[0]}`}>
                                       {status.label}
@@ -307,7 +308,7 @@ const PayoutsPage = () => {
                   </button>
                </div>
                <div className="aspect-[4/5] rounded-[2rem] overflow-hidden bg-slate-50 dark:bg-slate-800">
-                  <img src={`${API_URL.replace('/api', '')}${showSlip}`} className="h-full w-full object-contain" alt="Payout Slip" />
+                  <img src={`${API_URL.replace('/api', '')}${showSlip}`} className="h-full w-full object-contain" alt="Payout Slip"  onError={(e) => { e.target.onerror = null; e.target.src = "https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff"; }} />
                </div>
             </motion.div>
           </div>

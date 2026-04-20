@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/client';
 import { getRoleBadge } from '../../utils/badges';
+import { formatDate } from '../../utils/date';
 import { UserX, UserCheck, Shield, ChevronDown, Search, Filter, Mail, Calendar, AlertCircle } from 'lucide-react';
 
 const AdminUsersPage = () => {
@@ -41,7 +42,7 @@ const AdminUsersPage = () => {
   const handleUpdate = async (userId, updates) => {
     try {
       const { data } = await api.put(`/admin/users/${userId}`, updates);
-      setUsers(prev => prev.map(u => u._id === userId ? { ...u, ...data } : u));
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...data } : u));
       setConfirmModal({ show: false, userId: null, newRole: null });
       showMsg('User profile updated successfully');
     } catch (err) {
@@ -169,7 +170,7 @@ const AdminUsersPage = () => {
               {filteredUsers.map((user) => {
                 const badge = getRoleBadge(user.role);
                 return (
-                  <tr key={user._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                  <tr key={user.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="px-5 py-5 md:px-8 md:py-6" data-label="User Details">
                       <div className="flex items-center gap-3 md:gap-4">
                         <div className={`h-10 w-10 md:h-12 md:w-12 shrink-0 rounded-2xl ${activeTab === 'deleted' ? 'bg-slate-100 text-slate-400' : badge.color} flex items-center justify-center shadow-inner`}>
@@ -188,7 +189,7 @@ const AdminUsersPage = () => {
                         <div className="relative inline-block w-full md:w-48">
                             <select 
                              value={user.role}
-                             onChange={(e) => initiateRoleChange(user._id, e.target.value)}
+                             onChange={(e) => initiateRoleChange(user.id, e.target.value)}
                              disabled={user.email === 'liyamu.owner@gmail.com' || user.badges?.owner}
                              className={`w-full appearance-none rounded-xl px-4 py-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
                                user.role === 'admin' ? 'bg-slate-900 text-white border-transparent' : 'bg-slate-50 text-slate-600 border-slate-100 hover:border-brand-600 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
@@ -207,7 +208,7 @@ const AdminUsersPage = () => {
                     <td className="px-5 py-5 md:px-8 md:py-6" data-label="Activity">
                        <div className="flex flex-col gap-1">
                           <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
-                             <Calendar size={10} /> {activeTab === 'active' ? `Joined ${new Date(user.createdAt).toLocaleDateString()}` : `Deleted ${new Date(user.deletedAt).toLocaleDateString()}`}
+                             <Calendar size={10} /> {activeTab === 'active' ? `Joined ${formatDate(user.createdAt)}` : `Deleted ${formatDate(user.deletedAt)}`}
                           </p>
                           {activeTab === 'active' && (
                             <div className={`flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest ${user.isBanned ? 'text-rose-500' : 'text-emerald-500'}`}>
@@ -223,7 +224,7 @@ const AdminUsersPage = () => {
                            {!(user.email === 'liyamu.owner@gmail.com' || user.badges?.owner) ? (
                              <>
                                <button 
-                                onClick={() => handleUpdate(user._id, { isBanned: !user.isBanned })}
+                                onClick={() => handleUpdate(user.id, { isBanned: !user.isBanned })}
                                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${
                                   user.isBanned 
                                     ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
@@ -234,7 +235,7 @@ const AdminUsersPage = () => {
                                  {user.isBanned ? 'Unban' : 'Suspend'}
                                </button>
                                <button 
-                                onClick={() => setDeleteModal({ show: true, userId: user._id, userName: user.name })}
+                                onClick={() => setDeleteModal({ show: true, userId: user.id, userName: user.name })}
                                 className="h-9 w-9 flex items-center justify-center rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
                                 title="Delete User Permanently"
                                >

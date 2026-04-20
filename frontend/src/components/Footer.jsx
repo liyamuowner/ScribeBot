@@ -6,7 +6,7 @@ const Footer = () => (
       <div className="col-span-1 md:col-span-2">
         <Link to="/" className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-lg shadow-slate-900/10 dark:shadow-brand-600/20">
-             <video src="/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-screen" />
+             <video src="https://res.cloudinary.com/dmoiunaru/video/upload/v1776676540/liyamu_assets/logo.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-screen" />
           </div>
           <span className="text-xl font-black tracking-[0.2em] text-slate-900 uppercase dark:text-white">Liyamu</span>
         </Link>

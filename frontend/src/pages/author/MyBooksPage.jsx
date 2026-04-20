@@ -21,7 +21,7 @@ const MyBooksPage = () => {
 
     try {
       await api.delete(`/books/${id}`);
-      setBooks(books.filter(b => b._id !== id));
+      setBooks(books.filter(b => b.id !== id));
       toast.success('Book deleted successfully');
     } catch (err) {
       console.error(err);
@@ -58,7 +58,7 @@ const MyBooksPage = () => {
             const status = getStatusBadge(book.status);
             return (
               <motion.div 
-                key={book._id}
+                key={book.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
@@ -68,7 +68,7 @@ const MyBooksPage = () => {
                   {/* Cover Preview */}
                   <div className="relative h-64 w-full sm:h-48 sm:w-36 shrink-0 overflow-hidden rounded-2xl bg-slate-100 shadow-lg group-hover:scale-105 transition-transform duration-500">
                     {book.coverUrl ? (
-                      <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt="" />
+                      <img src={book.coverUrl.startsWith('http') ? book.coverUrl : `${API_URL}${book.coverUrl}`} className="h-full w-full object-cover" alt=""  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-slate-200">
                         <BookOpen size={48} />
@@ -93,7 +93,7 @@ const MyBooksPage = () => {
                       
                       <div className="flex items-center gap-2">
                         <button 
-                          onClick={() => handleDelete(book._id, book.title)}
+                          onClick={() => handleDelete(book.id, book.title)}
                           className="h-10 w-10 flex items-center justify-center rounded-xl bg-rose-50 text-rose-400 hover:text-rose-600 hover:bg-rose-100 transition-all border border-rose-100/50"
                         >
                            <Trash2 size={18} />

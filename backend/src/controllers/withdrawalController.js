@@ -1,6 +1,7 @@
 import { col, getDocById, createDoc, updateDoc, snapToArray, FieldValue } from '../config/firestore.js';
 import { notifyAdmins, triggerNotification } from '../utils/notificationHelper.js';
 import { ApiError } from '../utils/apiError.js';
+import { uploadBufferToCloudinary } from '../utils/cloudinaryHelper.js';
 
 export const createPayoutRequest = async (req, res) => {
   const { amount, bankDetails } = req.body;
@@ -67,7 +68,11 @@ export const updatePayoutStatus = async (req, res) => {
 
   if (status === 'completed') {
     if (!req.file) throw new ApiError(400, 'Please upload the transfer confirmation slip.');
-    updates.payoutSlip = req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`;
+    let fileUrl = req.file.path;
+    if (req.file.buffer) {
+        fileUrl = await uploadBufferToCloudinary(req.file.buffer, 'slips', 'image');
+    }
+    updates.payoutSlip = fileUrl && fileUrl.startsWith('http') ? fileUrl : `/uploads/${req.file.filename}`;
   } else if (status === 'rejected') {
     if (!rejectionReason) throw new ApiError(400, 'Please provide a reason for rejection.');
     updates.rejectionReason = rejectionReason;

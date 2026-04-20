@@ -132,7 +132,7 @@ const PublishPage = () => {
                 <label className="flex flex-col items-center justify-center w-full min-h-[140px] rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 hover:border-brand-600 cursor-pointer transition-all dark:bg-slate-800 dark:border-slate-700">
                   {coverPreview ? (
                     <div className="relative h-24 w-16 overflow-hidden rounded-lg shadow-lg">
-                      <img src={coverPreview} alt="" className="h-full w-full object-cover" />
+                      <img src={coverPreview} alt="" className="h-full w-full object-cover"  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                     </div>
                   ) : (
                     <>

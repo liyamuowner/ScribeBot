@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Trash2, Check, Clock, User, MessageSquare, ExternalLink, ShieldCheck } from 'lucide-react';
 import api from '../../api/client';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const AdminContactsPage = () => {
   const [messages, setMessages] = useState([]);
@@ -27,7 +28,7 @@ const AdminContactsPage = () => {
   const handleMarkRead = async (id) => {
     try {
       await api.put(`/contacts/${id}/read`);
-      setMessages(messages.map(m => m._id === id ? { ...m, status: 'read' } : m));
+      setMessages(messages.map(m => m.id === id ? { ...m, status: 'read' } : m));
       toast.success('Message marked as read');
     } catch (err) {
       toast.error('Failed to update message');
@@ -38,7 +39,7 @@ const AdminContactsPage = () => {
     const loadingToast = toast.loading('Deleting inquiry...');
     try {
       await api.delete(`/contacts/${id}`);
-      setMessages(prev => prev.filter(m => m._id !== id));
+      setMessages(prev => prev.filter(m => m.id !== id));
       toast.success('Message deleted successfully', { id: loadingToast });
     } catch (err) {
       console.error('Delete error:', err);
@@ -78,7 +79,7 @@ const AdminContactsPage = () => {
           <AnimatePresence>
             {messages.map((msg, i) => (
               <motion.div 
-                key={msg._id}
+                key={msg.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -110,7 +111,7 @@ const AdminContactsPage = () => {
                           </a>
                           <span className="h-1 w-1 rounded-full bg-slate-200" />
                           <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-                            <Clock size={12} /> {new Date(msg.createdAt).toLocaleString()}
+                            <Clock size={12} /> {formatDate(msg.createdAt, true)}
                           </span>
                         </div>
                       </div>
@@ -126,7 +127,7 @@ const AdminContactsPage = () => {
                   <div className="flex lg:flex-col gap-3 justify-end lg:justify-start">
                     {msg.status === 'unread' && (
                       <button 
-                        onClick={() => handleMarkRead(msg._id)}
+                        onClick={() => handleMarkRead(msg.id)}
                         className="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
                         title="Mark as Read"
                       >
@@ -141,7 +142,7 @@ const AdminContactsPage = () => {
                       <ExternalLink size={20} />
                     </a>
                     <button 
-                      onClick={() => handleDelete(msg._id)}
+                      onClick={() => handleDelete(msg.id)}
                       className="h-12 w-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all shadow-sm"
                       title="Delete Message"
                     >

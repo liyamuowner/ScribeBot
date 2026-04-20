@@ -6,6 +6,8 @@ import {
   ExternalLink, Eye, X, MessageSquare, AlertCircle
 } from 'lucide-react';
 import api from '../../api/client';
+import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const AdminCreditsPage = () => {
   const [transactions, setTransactions] = useState([]);
@@ -49,16 +51,16 @@ const AdminCreditsPage = () => {
 
   const handleAdjust = async (e) => {
     e.preventDefault();
-    if (!adjustment.userId || !adjustment.amount || !adjustment.reason) return alert('Fill all fields');
+    if (!adjustment.userId || !adjustment.amount || !adjustment.reason) return toast.error('Fill all fields');
     
     setSubmitting(true);
     try {
       await api.post('/credits/adjust', adjustment);
-      alert('Balance adjusted successfully');
+      toast.success('Balance adjusted successfully');
       setAdjustment({ userId: '', amount: '', type: 'admin_add', reason: '' });
       loadData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Adjustment failed');
+      toast.error(err.response?.data?.message || 'Adjustment failed');
     } finally {
       setSubmitting(false);
     }
@@ -66,18 +68,18 @@ const AdminCreditsPage = () => {
 
   const handleProcessRequest = async (requestId, status) => {
     if (status === 'rejected' && !adminNote) {
-      return alert('Please provide a reason for rejection');
+      return toast.error('Please provide a reason for rejection');
     }
 
     setSubmitting(true);
     try {
       await api.put('/credits/process-request', { requestId, status, adminNote });
-      alert(`Request ${status} successfully`);
+      toast.success(`Request ${status} successfully`);
       setSelectedRequest(null);
       setAdminNote('');
       loadData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Action failed');
+      toast.error(err.response?.data?.message || 'Action failed');
     } finally {
       setSubmitting(false);
     }
@@ -138,7 +140,7 @@ const AdminCreditsPage = () => {
                 <div className="h-40 flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-600 border-t-transparent" /></div>
               ) : pendingRequests.map(req => (
                 <motion.div 
-                  key={req._id}
+                  key={req.id}
                   layout
                   className="p-6 rounded-[2.5rem] bg-white border border-slate-50 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6"
                 >
@@ -151,7 +153,7 @@ const AdminCreditsPage = () => {
                             src={req.slipUrl?.startsWith('http') ? req.slipUrl : `${API_URL}${req.slipUrl}`} 
                             className="h-full w-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" 
                             alt="Payment Slip" 
-                          />
+                           onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x600/1e293b/ffffff?text=Image+Unavailable"; }} />
                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 text-white transition-opacity">
                             <Eye size={20} />
                          </div>
@@ -169,8 +171,8 @@ const AdminCreditsPage = () => {
                          <p className="text-[10px] font-bold text-slate-400 mt-1 truncate">{req.user?.email}</p>
                          <div className="mt-4 flex flex-wrap gap-4 text-[9px] font-black uppercase tracking-widest text-slate-400">
                             <span className="flex items-center gap-1 text-brand-600"><Coins size={10} /> {req.amount} Credits</span>
-                            <span className="flex items-center gap-1 text-slate-900 dark:text-slate-300 font-black">${req.price}</span>
-                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(req.createdAt).toLocaleString()}</span>
+                             <span className="flex items-center gap-1 text-slate-900 dark:text-slate-300 font-black">${req.price}</span>
+                             <span className="flex items-center gap-1"><Calendar size={10} /> {formatDate(req.createdAt, true)}</span>
                          </div>
                       </div>
                    </div>
@@ -222,7 +224,7 @@ const AdminCreditsPage = () => {
                 </div>
               ) : filteredTx.map(tx => (
                 <motion.div 
-                  key={tx._id}
+                  key={tx.id}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="p-6 rounded-[2rem] bg-white border border-slate-50 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex items-center justify-between group hover:shadow-xl transition-all"
@@ -243,7 +245,7 @@ const AdminCreditsPage = () => {
                          </div>
                          <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400 line-clamp-1 italic">"{tx.description}"</p>
                          <div className="mt-3 flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-slate-300">
-                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(tx.createdAt).toLocaleDateString()}</span>
+                             <span className="flex items-center gap-1"><Calendar size={10} /> {formatDate(tx.createdAt)}</span>
                             <span className="flex items-center gap-1"><UserIcon size={10} /> Type: {tx.type.replace('_', ' ')}</span>
                          </div>
                       </div>
@@ -294,9 +296,9 @@ const AdminCreditsPage = () => {
                     return u.creditBalance > 0;
                  }).map(u => (
                     <div 
-                      key={u._id}
-                      onClick={() => setAdjustment({...adjustment, userId: u._id})}
-                      className={`p-5 rounded-2xl border cursor-pointer transition-all ${adjustment.userId === u._id ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'border-slate-100 bg-slate-50 hover:border-brand-200 dark:border-slate-800 dark:bg-slate-800/50 hover:shadow-md'}`}
+                      key={u.id}
+                      onClick={() => setAdjustment({...adjustment, userId: u.id})}
+                      className={`p-5 rounded-2xl border cursor-pointer transition-all ${adjustment.userId === u.id ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'border-slate-100 bg-slate-50 hover:border-brand-200 dark:border-slate-800 dark:bg-slate-800/50 hover:shadow-md'}`}
                     >
                        <div className="flex items-center justify-between">
                           <div className="min-w-0 pr-4">
@@ -337,11 +339,11 @@ const AdminCreditsPage = () => {
                        {adjustment.userId ? (
                          <div className="w-full rounded-2xl bg-slate-800/80 border border-slate-700 px-6 py-4 flex items-center justify-between">
                             <div>
-                               <p className="text-sm font-bold text-white">{users.find(u => u._id === adjustment.userId)?.name}</p>
-                               <p className="text-[10px] text-slate-400">{users.find(u => u._id === adjustment.userId)?.email}</p>
+                               <p className="text-sm font-bold text-white">{users.find(u => u.id === adjustment.userId)?.name}</p>
+                               <p className="text-[10px] text-slate-400">{users.find(u => u.id === adjustment.userId)?.email}</p>
                             </div>
                             <div className="text-right">
-                               <p className="text-xs font-black text-brand-400">{users.find(u => u._id === adjustment.userId)?.creditBalance || 0} C</p>
+                               <p className="text-xs font-black text-brand-400">{users.find(u => u.id === adjustment.userId)?.creditBalance || 0} C</p>
                             </div>
                          </div>
                        ) : (
@@ -424,7 +426,7 @@ const AdminCreditsPage = () => {
                            src={selectedRequest.slipUrl?.startsWith('http') ? selectedRequest.slipUrl : `${API_URL}${selectedRequest.slipUrl}`} 
                            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" 
                            alt="Payment Slip Full" 
-                         />
+                          onError={(e) => { e.target.onerror = null; e.target.src = "https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff"; }} />
                          <a 
                            href={selectedRequest.slipUrl?.startsWith('http') ? selectedRequest.slipUrl : `${API_URL}${selectedRequest.slipUrl}`} 
                            target="_blank" 
@@ -491,7 +493,7 @@ const AdminCreditsPage = () => {
                              <div className="flex flex-col gap-3 pt-4">
                                 <button
                                   disabled={submitting}
-                                  onClick={() => handleProcessRequest(selectedRequest._id, 'approved')}
+                                  onClick={() => handleProcessRequest(selectedRequest.id, 'approved')}
                                   className="flex items-center justify-center gap-3 w-full py-5 rounded-2xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all disabled:opacity-50"
                                 >
                                    <CheckCircle size={18} />
@@ -499,7 +501,7 @@ const AdminCreditsPage = () => {
                                 </button>
                                 <button
                                   disabled={submitting}
-                                  onClick={() => handleProcessRequest(selectedRequest._id, 'rejected')}
+                                  onClick={() => handleProcessRequest(selectedRequest.id, 'rejected')}
                                   className="flex items-center justify-center gap-3 w-full py-5 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all dark:bg-rose-500/10 dark:border-rose-500/20 dark:text-rose-400 disabled:opacity-50"
                                 >
                                    <Ban size={18} />

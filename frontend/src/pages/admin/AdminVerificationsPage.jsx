@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import api from '../../api/client';
 import { Check, X, ShieldAlert, FileText, User as UserIcon, Phone, Mail, Award, Clock, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const AdminVerificationsPage = () => {
   const [items, setItems] = useState([]);
@@ -34,7 +36,7 @@ const AdminVerificationsPage = () => {
       setConfirmAction({ show: false, type: '', id: null });
       load();
     } catch (err) {
-      alert('Action failed');
+      toast.error('Action failed');
     }
   };
 
@@ -83,7 +85,7 @@ const AdminVerificationsPage = () => {
           <AnimatePresence mode="popLayout">
             {pendingRequests.map((item, i) => (
               <motion.div 
-                key={item._id}
+                key={item.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
@@ -131,13 +133,13 @@ const AdminVerificationsPage = () => {
 
                 <div className="mt-6 md:mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <button 
-                    onClick={() => setConfirmAction({ show: true, type: 'accepted', id: item._id })} 
+                    onClick={() => setConfirmAction({ show: true, type: 'accepted', id: item.id })} 
                     className="w-full flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 md:py-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
                   >
                     <Check size={14} strokeWidth={3} /> Approve Author
                   </button>
                   <button 
-                    onClick={() => setRejectingId(item._id)} 
+                    onClick={() => setRejectingId(item.id)} 
                     className="w-full flex items-center justify-center gap-2 rounded-2xl bg-white border border-slate-200 py-3 md:py-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-600 hover:border-rose-100 hover:bg-rose-50 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500 dark:hover:text-rose-400 dark:hover:bg-rose-500/10 active:scale-95"
                   >
                     <X size={14} strokeWidth={3} /> Reject Request
@@ -176,7 +178,7 @@ const AdminVerificationsPage = () => {
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                 {historyRequests.map((item) => (
-                  <tr key={item._id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                  <tr key={item.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="px-8 py-6" data-label="User Details">
                       <div className="flex items-center gap-4">
                         <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-white shadow-lg ${item.status === 'accepted' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-rose-500 shadow-rose-500/20'}`}>
@@ -197,7 +199,7 @@ const AdminVerificationsPage = () => {
                        </span>
                     </td>
                     <td className="px-6 py-6 text-xs font-black text-slate-500 dark:text-slate-600" data-label="Date Actioned">
-                       {new Date(item.reviewedAt || item.updatedAt).toLocaleDateString()}
+                       {formatDate(item.reviewedAt || item.updatedAt)}
                     </td>
                     <td className="px-8 py-6 text-right" data-label="Admin">
                        <div className="flex items-center justify-end gap-2 text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-slate-400">

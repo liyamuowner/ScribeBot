@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Users, ShieldCheck, Mail, Info, ArrowRight, Sparkles, Heart, Search, HelpCircle, Shield, Zap, BarChart3, MessageSquare } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../utils/date';
 
 const HomePage = () => {
   const { auth } = useAuth();
@@ -245,7 +246,7 @@ const HomePage = () => {
                   </div>
                   <div>
                     <h4 className="text-sm font-black text-slate-900 dark:text-white">{work.author?.name}</h4>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{new Date(work.createdAt?._seconds ? work.createdAt._seconds * 1000 : work.createdAt).toLocaleDateString()}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{formatDate(work.createdAt)}</p>
                   </div>
                 </div>
                 <span className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest dark:bg-emerald-500/10 dark:text-emerald-400">

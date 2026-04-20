@@ -6,7 +6,9 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { getExchangeRate, formatLKR } from '../../utils/currency';
+import { formatLKR } from '../../utils/currency';
+import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const BuyCreditsPage = () => {
   const { auth, setAuth } = useAuth();
@@ -84,7 +86,7 @@ const BuyCreditsPage = () => {
       }, 3000);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Upload failed');
+      toast.error(err.response?.data?.message || 'Upload failed');
     } finally {
       setLoading(false);
     }
@@ -214,7 +216,7 @@ const BuyCreditsPage = () => {
                           </div>
                           <div>
                              <p className="text-xs font-black uppercase text-slate-900 dark:text-white">Purchase Instance: {req.amount} Credits</p>
-                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">${req.price} • {new Date(req.createdAt?._seconds ? req.createdAt._seconds * 1000 : req.createdAt).toLocaleDateString()}</p>
+                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">${req.price} • {formatDate(req.createdAt)}</p>
                           </div>
                        </div>
                        
@@ -250,7 +252,7 @@ const BuyCreditsPage = () => {
                         </div>
                         <div>
                            <p className="text-xs font-black uppercase text-slate-900 dark:text-white">{tx.description}</p>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(tx.createdAt?._seconds ? tx.createdAt._seconds * 1000 : tx.createdAt).toLocaleDateString()}</p>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{formatDate(tx.createdAt)}</p>
                         </div>
                      </div>
                      <div className={`text-sm font-black ${

@@ -27,6 +27,7 @@ import api from '../../api/client';
 import { getRoleBadge } from '../../utils/badges';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const AuthorProfilePage = () => {
   const { id } = useParams();
@@ -151,7 +152,7 @@ const AuthorProfilePage = () => {
                  </span>
                  <div className="flex items-center gap-1.5 text-slate-400">
                     <Clock size={14} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Joined {new Date(author.createdAt?._seconds ? author.createdAt._seconds * 1000 : author.createdAt).getFullYear()}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Joined {formatDate(author.createdAt)}</span>
                  </div>
               </div>
 
@@ -280,7 +281,7 @@ const AuthorProfilePage = () => {
                          <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest dark:bg-emerald-500/10 dark:text-emerald-400">
                             {work.category}
                          </span>
-                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12} /> {new Date(work.createdAt?._seconds ? work.createdAt._seconds * 1000 : work.createdAt).toLocaleDateString()}</span>
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Clock size={12} /> {formatDate(work.createdAt)}</span>
                       </div>
                       <h4 className="text-xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-tight">{work.title}</h4>
                       <Link 

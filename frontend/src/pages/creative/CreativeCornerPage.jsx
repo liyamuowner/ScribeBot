@@ -4,6 +4,7 @@ import { Sparkles, Search, MessageSquare, Heart, Eye, Plus, Filter, User, Bookma
 import { Link } from 'react-router-dom';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../utils/date';
 
 const CreativeCornerPage = () => {
   const { auth } = useAuth();
@@ -161,7 +162,7 @@ const CreativeCornerPage = () => {
                     </div>
                     <div>
                       <h4 className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[120px]">{work.author?.name}</h4>
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{new Date(work.createdAt?._seconds ? work.createdAt._seconds * 1000 : work.createdAt).toLocaleDateString()}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{formatDate(work.createdAt)}</p>
                     </div>
                   </div>
                   <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest dark:bg-emerald-500/10 dark:text-emerald-400">

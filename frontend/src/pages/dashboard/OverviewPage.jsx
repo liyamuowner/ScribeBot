@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getRoleBadge } from '../../utils/badges';
+import { formatDate } from '../../utils/date';
 import api from '../../api/client';
 
 const OverviewPage = () => {
@@ -180,7 +181,7 @@ const OverviewPage = () => {
                    </div>
                    <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Member Since</p>
-                      <p className="text-sm font-bold text-slate-700">{new Date(auth?.createdAt?._seconds ? auth?.createdAt._seconds * 1000 : auth?.createdAt).toLocaleDateString()}</p>
+                      <p className="text-sm font-bold text-slate-700">{formatDate(auth?.createdAt)}</p>
                    </div>
                 </div>
                 <div className="flex items-center gap-4">

@@ -18,6 +18,7 @@ import {
   Trash2
 } from 'lucide-react';
 import api from '../../api/client';
+import { formatDate } from '../../utils/date';
 
 const AdminPayoutsPage = () => {
   const [requests, setRequests] = useState([]);
@@ -156,7 +157,7 @@ const AdminPayoutsPage = () => {
                            <div className="flex items-center gap-3">
                               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase truncate max-w-[150px]">{req.user?.name || 'Unknown Author'}</h3>
                               <span className="rounded-lg bg-slate-50 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-400 dark:bg-slate-800">
-                                 {req.createdAt ? new Date(req.createdAt?._seconds ? req.createdAt._seconds * 1000 : req.createdAt).toLocaleDateString() : 'N/A'}
+                                 {formatDate(req.createdAt)}
                               </span>
                            </div>
                            <div className="mt-2 flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-slate-400">

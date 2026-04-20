@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import api from '../../api/client';
 import { Check, X, ShieldAlert, FileText, User as UserIcon, Phone, Mail, Award, Clock, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const AdminVerificationsPage = () => {
   const [items, setItems] = useState([]);
@@ -34,7 +36,7 @@ const AdminVerificationsPage = () => {
       setConfirmAction({ show: false, type: '', id: null });
       load();
     } catch (err) {
-      alert('Action failed');
+      toast.error('Action failed');
     }
   };
 
@@ -197,7 +199,7 @@ const AdminVerificationsPage = () => {
                        </span>
                     </td>
                     <td className="px-6 py-6 text-xs font-black text-slate-500 dark:text-slate-600" data-label="Date Actioned">
-                       {new Date(item.reviewedAt || item.updatedAt?._seconds ? item.reviewedAt || item.updatedAt._seconds * 1000 : item.reviewedAt || item.updatedAt).toLocaleDateString()}
+                       {formatDate(item.reviewedAt || item.updatedAt)}
                     </td>
                     <td className="px-8 py-6 text-right" data-label="Admin">
                        <div className="flex items-center justify-end gap-2 text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-slate-400">

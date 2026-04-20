@@ -6,6 +6,8 @@ import {
   ExternalLink, Eye, X, MessageSquare, AlertCircle
 } from 'lucide-react';
 import api from '../../api/client';
+import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const AdminCreditsPage = () => {
   const [transactions, setTransactions] = useState([]);
@@ -49,16 +51,16 @@ const AdminCreditsPage = () => {
 
   const handleAdjust = async (e) => {
     e.preventDefault();
-    if (!adjustment.userId || !adjustment.amount || !adjustment.reason) return alert('Fill all fields');
+    if (!adjustment.userId || !adjustment.amount || !adjustment.reason) return toast.error('Fill all fields');
     
     setSubmitting(true);
     try {
       await api.post('/credits/adjust', adjustment);
-      alert('Balance adjusted successfully');
+      toast.success('Balance adjusted successfully');
       setAdjustment({ userId: '', amount: '', type: 'admin_add', reason: '' });
       loadData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Adjustment failed');
+      toast.error(err.response?.data?.message || 'Adjustment failed');
     } finally {
       setSubmitting(false);
     }
@@ -66,18 +68,18 @@ const AdminCreditsPage = () => {
 
   const handleProcessRequest = async (requestId, status) => {
     if (status === 'rejected' && !adminNote) {
-      return alert('Please provide a reason for rejection');
+      return toast.error('Please provide a reason for rejection');
     }
 
     setSubmitting(true);
     try {
       await api.put('/credits/process-request', { requestId, status, adminNote });
-      alert(`Request ${status} successfully`);
+      toast.success(`Request ${status} successfully`);
       setSelectedRequest(null);
       setAdminNote('');
       loadData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Action failed');
+      toast.error(err.response?.data?.message || 'Action failed');
     } finally {
       setSubmitting(false);
     }
@@ -169,8 +171,8 @@ const AdminCreditsPage = () => {
                          <p className="text-[10px] font-bold text-slate-400 mt-1 truncate">{req.user?.email}</p>
                          <div className="mt-4 flex flex-wrap gap-4 text-[9px] font-black uppercase tracking-widest text-slate-400">
                             <span className="flex items-center gap-1 text-brand-600"><Coins size={10} /> {req.amount} Credits</span>
-                            <span className="flex items-center gap-1 text-slate-900 dark:text-slate-300 font-black">${req.price}</span>
-                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(req.createdAt?._seconds ? req.createdAt._seconds * 1000 : req.createdAt).toLocaleString()}</span>
+                             <span className="flex items-center gap-1 text-slate-900 dark:text-slate-300 font-black">${req.price}</span>
+                             <span className="flex items-center gap-1"><Calendar size={10} /> {formatDate(req.createdAt, true)}</span>
                          </div>
                       </div>
                    </div>
@@ -243,7 +245,7 @@ const AdminCreditsPage = () => {
                          </div>
                          <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400 line-clamp-1 italic">"{tx.description}"</p>
                          <div className="mt-3 flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-slate-300">
-                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(tx.createdAt?._seconds ? tx.createdAt._seconds * 1000 : tx.createdAt).toLocaleDateString()}</span>
+                             <span className="flex items-center gap-1"><Calendar size={10} /> {formatDate(tx.createdAt)}</span>
                             <span className="flex items-center gap-1"><UserIcon size={10} /> Type: {tx.type.replace('_', ' ')}</span>
                          </div>
                       </div>

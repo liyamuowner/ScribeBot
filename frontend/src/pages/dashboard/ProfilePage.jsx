@@ -4,6 +4,7 @@ import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { getRoleBadge } from '../../utils/badges';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDate } from '../../utils/date';
 import { ShieldCheck, Mail, Phone, Facebook, Send, User, BookOpen, Clock, CheckCircle, AlertCircle, Bookmark, Trash2, Plus, Key, Lock } from 'lucide-react';
 
 const ProfilePage = () => {
@@ -23,6 +24,7 @@ const ProfilePage = () => {
   const [bookmarkedWorks, setBookmarkedWorks] = useState([]);
   const [message, setMessage] = useState('');
   const [profilePictureFile, setProfilePictureFile] = useState(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
   const [deletedWorks, setDeletedWorks] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -50,6 +52,8 @@ const ProfilePage = () => {
     }
   }, [auth?.profilePicture]);
 
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
         setMessage('Image size must be less than 10MB');
@@ -167,17 +171,9 @@ const ProfilePage = () => {
                  {badge.label}
                </span>
                <div className="h-1 w-1 rounded-full bg-slate-700" />
-               <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Joined {(() => { 
-                 const raw = auth?.createdAt; 
-                 if (!raw) return 'Unknown'; 
-                 let date;
-                 if (raw?._seconds || raw?.seconds) {
-                   date = new Date((raw._seconds || raw.seconds) * 1000);
-                 } else {
-                   date = new Date(raw);
-                 }
-                 return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString();
-               })()}</span>
+               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">
+                 MEMBER SINCE {formatDate(auth?.createdAt)}
+               </p>
             </div>
           </div>
         </div>
@@ -490,7 +486,7 @@ const ProfilePage = () => {
                  <div key={work.id} className="flex flex-col rounded-2xl bg-slate-50/50 p-6 border border-slate-100 dark:bg-slate-800/30 dark:border-slate-800">
                     <div className="flex justify-between items-start mb-4">
                        <h4 className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{work.title}</h4>
-                       <span className="text-[9px] font-bold text-slate-400">Deleted on {new Date(work.deletedAt?._seconds ? work.deletedAt._seconds * 1000 : work.deletedAt).toLocaleDateString()}</span>
+                       <span className="text-[9px] font-bold text-slate-400">Deleted on {formatDate(work.deletedAt)}</span>
                     </div>
                     <div className="flex items-center gap-3 mt-auto">
                        <button 

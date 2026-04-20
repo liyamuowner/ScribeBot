@@ -4,6 +4,8 @@ import { Check, Star, Zap, Crown, Rocket, ArrowRight, ShieldCheck, Sparkles, Coi
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const ProUpgradePage = () => {
   const { auth, setAuth } = useAuth();
@@ -46,7 +48,7 @@ const ProUpgradePage = () => {
 
   const handleUpgrade = async (plan) => {
     if (auth.creditBalance < parseInt(plan.price)) {
-      alert(`Insufficient credits. You need ${plan.price} credits to upgrade.`);
+      toast.error(`Insufficient credits. You need ${plan.price} credits to upgrade.`);
       return;
     }
 
@@ -54,11 +56,11 @@ const ProUpgradePage = () => {
     try {
       const { data } = await api.post('/pro/upgrade', { type: plan.id });
       setAuth({ ...data.user, token: auth.token });
-      alert('Upgrade successful! You are now a Liyamu Pro member.');
+      toast.success('Upgrade successful! You are now a Liyamu Pro member.');
       navigate('/dashboard/my-books');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Upgrade failed. Please try again.');
+      toast.error(err.response?.data?.message || 'Upgrade failed. Please try again.');
     } finally {
       setLoading(null);
     }
@@ -94,7 +96,7 @@ const ProUpgradePage = () => {
             <div>
               <h3 className="text-xl font-black uppercase tracking-tight">You are a Pro Member!</h3>
               <p className="text-xs font-bold opacity-80 uppercase tracking-widest">
-                Expires on: {new Date(auth.proExpiryDate?._seconds ? auth.proExpiryDate._seconds * 1000 : auth.proExpiryDate).toLocaleDateString()}
+                Expires on: {formatDate(auth.proExpiryDate)}
               </p>
             </div>
           </div>

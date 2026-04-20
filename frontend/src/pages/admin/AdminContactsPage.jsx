@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Trash2, Check, Clock, User, MessageSquare, ExternalLink, ShieldCheck } from 'lucide-react';
 import api from '../../api/client';
 import toast from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const AdminContactsPage = () => {
   const [messages, setMessages] = useState([]);
@@ -110,7 +111,7 @@ const AdminContactsPage = () => {
                           </a>
                           <span className="h-1 w-1 rounded-full bg-slate-200" />
                           <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-                            <Clock size={12} /> {new Date(msg.createdAt?._seconds ? msg.createdAt._seconds * 1000 : msg.createdAt).toLocaleString()}
+                            <Clock size={12} /> {formatDate(msg.createdAt, true)}
                           </span>
                         </div>
                       </div>

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../utils/date';
 
 const WorkDetailsPage = () => {
   const { id } = useParams();
@@ -121,7 +122,7 @@ const WorkDetailsPage = () => {
                 </span>
                 <div className="flex items-center gap-2 text-slate-400">
                    <Clock size={12} />
-                   <span className="text-[9px] font-black uppercase tracking-widest">{new Date(work.createdAt?._seconds ? work.createdAt._seconds * 1000 : work.createdAt).toLocaleDateString()}</span>
+                   <span className="text-[9px] font-black uppercase tracking-widest">{formatDate(work.createdAt)}</span>
                 </div>
               </div>
 
@@ -221,7 +222,7 @@ const WorkDetailsPage = () => {
                       <div className="flex-1">
                          <div className="flex items-center justify-between mb-1">
                             <h4 className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{comment.user?.name}</h4>
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{new Date(comment.createdAt?._seconds ? comment.createdAt._seconds * 1000 : comment.createdAt).toLocaleDateString()}</span>
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{formatDate(comment.createdAt)}</span>
                          </div>
                          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">{comment.text}</p>
                       </div>

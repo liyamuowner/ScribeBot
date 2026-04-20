@@ -6,6 +6,7 @@ import api from '../../api/client';
 import SecurePDFReader from '../../components/SecurePDFReader';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { formatDate } from '../../utils/date';
 
 const ReaderPage = () => {
   const { auth, setAuth } = useAuth();
@@ -272,7 +273,7 @@ const ReaderPage = () => {
                     </div>
                     
                     <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                       {new Date(r.createdAt?._seconds ? r.createdAt._seconds * 1000 : r.createdAt).toLocaleDateString()}
+                       {formatDate(r.createdAt)}
                     </p>
                   </motion.div>
                 ))

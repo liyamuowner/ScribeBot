@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MessageSquare, Send, CheckCircle, Facebook } from 'lucide-react';
 import api from '../../api/client';
+import { toast } from 'react-hot-toast';
 
 const ContactPage = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -17,7 +18,7 @@ const ContactPage = () => {
       setForm({ name: '', email: '', message: '' });
     } catch (err) {
       console.error(err);
-      alert('Failed to send message. Please try again.');
+      toast.error('Failed to send message. Please try again.');
     } finally {
       setLoading(false);
     }

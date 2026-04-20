@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/client';
 import { getRoleBadge } from '../../utils/badges';
+import { formatDate } from '../../utils/date';
 import { UserX, UserCheck, Shield, ChevronDown, Search, Filter, Mail, Calendar, AlertCircle } from 'lucide-react';
 
 const AdminUsersPage = () => {
@@ -207,7 +208,7 @@ const AdminUsersPage = () => {
                     <td className="px-5 py-5 md:px-8 md:py-6" data-label="Activity">
                        <div className="flex flex-col gap-1">
                           <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
-                             <Calendar size={10} /> {activeTab === 'active' ? `Joined ${new Date(user.createdAt?._seconds ? user.createdAt._seconds * 1000 : user.createdAt).toLocaleDateString()}` : `Deleted ${new Date(user.deletedAt?._seconds ? user.deletedAt._seconds * 1000 : user.deletedAt).toLocaleDateString()}`}
+                             <Calendar size={10} /> {activeTab === 'active' ? `Joined ${formatDate(user.createdAt)}` : `Deleted ${formatDate(user.deletedAt)}`}
                           </p>
                           {activeTab === 'active' && (
                             <div className={`flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest ${user.isBanned ? 'text-rose-500' : 'text-emerald-500'}`}>

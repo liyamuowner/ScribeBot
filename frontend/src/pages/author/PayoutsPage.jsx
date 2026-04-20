@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../utils/date';
 
 const PayoutsPage = () => {
   const { auth, setAuth } = useAuth();
@@ -237,7 +238,7 @@ const PayoutsPage = () => {
                                 <div>
                                    <div className="flex items-center gap-2">
                                       <h4 className="text-sm font-black text-slate-900 dark:text-white">{req.amount} Credits</h4>
-                                      <span className="text-[10px] text-slate-400 font-medium">• {new Date(req.createdAt?._seconds ? req.createdAt._seconds * 1000 : req.createdAt).toLocaleDateString()}</span>
+                                      <span className="text-[10px] text-slate-400 font-medium">• {formatDate(req.createdAt)}</span>
                                    </div>
                                    <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${status.color.split(' ')[0]}`}>
                                       {status.label}

@@ -5,7 +5,7 @@ import { Star, Send, MessageSquare, AlertCircle, Quote, Users, ShieldCheck, Coin
 import api from '../../api/client';
 import SecurePDFReader from '../../components/SecurePDFReader';
 import { useAuth } from '../../context/AuthContext';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { formatDate } from '../../utils/date';
 
 const ReaderPage = () => {

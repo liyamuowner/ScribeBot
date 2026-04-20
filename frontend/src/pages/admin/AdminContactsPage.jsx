@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Trash2, Check, Clock, User, MessageSquare, ExternalLink, ShieldCheck } from 'lucide-react';
 import api from '../../api/client';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { formatDate } from '../../utils/date';
 
 const AdminContactsPage = () => {

